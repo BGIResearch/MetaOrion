@@ -7,14 +7,11 @@
 # @Email   : zhangchao5@genomics.cn
 from __future__ import annotations
 
-import math
+from dataclasses import dataclass
 import os
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from transformers.models.llama.modeling_llama import LlamaRMSNorm
 from transformers.utils import ModelOutput
-from dataclasses import dataclass
 
 
 @dataclass
@@ -43,6 +40,8 @@ class HeaderOutput(ModelOutput):
 
 
 class Header(nn.Module):
+    """Base class for phenotype prediction heads."""
+
     def __init__(self, **kwargs):
         super().__init__()
 
@@ -51,6 +50,7 @@ class Header(nn.Module):
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path, **kwargs):
+        """Load classifier weights from classifier.bin."""
         HEADER_WEIGHT_NAME = 'classifier.bin'
         ckpt = torch.load(os.path.join(pretrained_model_name_or_path, HEADER_WEIGHT_NAME), map_location='cpu')
         model = cls(**kwargs)
@@ -85,7 +85,10 @@ class Header(nn.Module):
                 f'\n {list(unmatched_ckpt2model.keys())}')
         return model
 
+
 class LinearHeader(Header):
+    """Use sample, age, and gender embeddings for phenotype prediction."""
+
     def __init__(self, input_dims, output_dims, dropout_rate):
         super().__init__()
         self.gender_embed = nn.Embedding(3, input_dims)
@@ -124,21 +127,25 @@ class LinearHeader(Header):
         )
 
     def forward(self, sample_embeds, age, gender, abu_features, domain_idx=None, **kwargs):
+        """Input: sample features. Output: disease logits and state logits."""
         age_embeds = self.age_embed(age[..., None])
         gender_embeds = self.gender_embed(gender)
-        x = torch.cat([sample_embeds, age_embeds, gender_embeds], dim=-1)
-        fusion_emb = x
-        for ix, ly in enumerate(self.fusion):
+        combined_features = torch.cat([sample_embeds, age_embeds, gender_embeds], dim=-1)
+
+        fusion_emb = combined_features
+        for ly in self.fusion:
             fusion_emb = ly(fusion_emb)
 
-        x = fusion_emb + sample_embeds
-        state_logits = self.state_ly(x)
-        for ix, ly in enumerate(self.net):
-            x = ly(x)
+        head_input = fusion_emb + sample_embeds
+        state_logits = self.state_ly(head_input)
+
+        disease_logits = head_input
+        for ly in self.net:
+            disease_logits = ly(disease_logits)
 
         return HeaderOutput(
-            logits=x,
+            logits=disease_logits,
             state_logits=state_logits,
-            emb=fusion_emb + sample_embeds,
+            emb=head_input,
             fusion_emb=fusion_emb
         )

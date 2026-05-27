@@ -11,11 +11,6 @@ import os.path
 
 import torch
 import torch.nn as nn
-# import numpy as np
-# import pandas as pd
-# import matplotlib.pyplot as plt
-# import seaborn as sns
-# from sklearn.metrics.pairwise import cosine_similarity
 import torch.nn.functional as F
 from peft import PeftModel, LoraConfig, get_peft_model
 from transformers.models.llama.modeling_llama import LlamaRMSNorm
@@ -26,6 +21,8 @@ from src.metagenome_model.models.pretrain.metagenome_module import MetaGenomePre
 
 
 class MeatGenomeForSEQEmbeddingModelWithGraph(MetaGenomePreTrainedModel):
+    """Encode taxa tokens and abundance values into token and sample embeddings."""
+
     def __init__(self, config: MetaGenomeConfig, **kwargs):
         super().__init__(config)
         self.embed_abundances = nn.Sequential(
@@ -46,21 +43,18 @@ class MeatGenomeForSEQEmbeddingModelWithGraph(MetaGenomePreTrainedModel):
         self.attn_pooling = AttentionPooling(config.hidden_size, config.hidden_size)
 
     def forward(self, input_ids, attention_mask, padding_mask, abundance, adjacency, sample):
-        tokens_embed = self.sequence_model.embed_tokens(input_ids)
-        abundance_embed = self.embed_abundances(abundance[..., None])
-        hidden_states = self.sequence_model(
-            inputs_embeds=tokens_embed + abundance_embed,
+        """Run token embedding, abundance embedding, optional graph fusion, and sample pooling."""
+        tokens_embed, abundance_embed, hidden_states = self._encode_sequence(
+            input_ids=input_ids,
             attention_mask=attention_mask,
-            padding_mask=padding_mask
-        ).last_hidden_state
-
-        # For graph
-        if self.graph_model is not None:
-            graph_states = self.graph_model(hidden_states, adjacency)
-            fusion_emb = self.fusion(torch.cat((hidden_states + graph_states, abundance_embed), -1))
-        else:
-            fusion_emb = self.fusion(torch.cat((hidden_states, abundance_embed), -1))
-
+            padding_mask=padding_mask,
+            abundance=abundance
+        )
+        fusion_emb = self._fuse_graph_states(
+            hidden_states=hidden_states,
+            abundance_embed=abundance_embed,
+            adjacency=adjacency
+        )
         attn_weight, sample_emb = self.attn_pooling(fusion_emb, padding_mask)
 
         return MetaGenomeModelOutput(
@@ -72,8 +66,29 @@ class MeatGenomeForSEQEmbeddingModelWithGraph(MetaGenomePreTrainedModel):
             attn_weight=attn_weight
         )
 
+    def _encode_sequence(self, input_ids, attention_mask, padding_mask, abundance):
+        """Input: tokens and abundance. Output: token, abundance, and sequence embeddings."""
+        tokens_embed = self.sequence_model.embed_tokens(input_ids)
+        abundance_embed = self.embed_abundances(abundance[..., None])
+        hidden_states = self.sequence_model(
+            inputs_embeds=tokens_embed + abundance_embed,
+            attention_mask=attention_mask,
+            padding_mask=padding_mask
+        ).last_hidden_state
+        return tokens_embed, abundance_embed, hidden_states
+
+    def _fuse_graph_states(self, hidden_states, abundance_embed, adjacency):
+        """Input: sequence states and graph. Output: fused token embeddings."""
+        # Fuse sequence states with graph states when graph is enabled.
+        if self.graph_model is not None:
+            graph_states = self.graph_model(hidden_states, adjacency)
+            hidden_states = hidden_states + graph_states
+        return self.fusion(torch.cat((hidden_states, abundance_embed), -1))
+
 
 class AttentionPooling(nn.Module):
+    """Pool token embeddings into one sample embedding with learned attention weights."""
+
     def __init__(self, input_dims, hidden_dims):
         super().__init__()
         self.net = nn.Sequential(
@@ -83,21 +98,24 @@ class AttentionPooling(nn.Module):
         )
 
     def forward(self, x, attn_mask=None):
-        b, l, c = x.size()
+        """Input: token embeddings and mask. Output: attention weights and pooled embedding."""
+        batch_size, seq_len, _ = x.size()
         if attn_mask is None:
-            attn_mask = torch.ones((b, l), device=x.device, dtype=torch.float)
+            attn_mask = torch.ones((batch_size, seq_len), device=x.device, dtype=torch.float)
         else:
             attn_mask = attn_mask.float()
 
-        x0 = x
-        x = self.net(x)
-        attn_weight = x + (1 - attn_mask[..., None]) * torch.finfo(x.dtype).min
+        token_embeds = x
+        attn_logits = self.net(x)
+        attn_weight = attn_logits + (1 - attn_mask[..., None]) * torch.finfo(attn_logits.dtype).min
         attn_weight = F.softmax(attn_weight, dim=1)
-        reduce_x = torch.sum(attn_weight * x0, dim=1)
-        return attn_weight.squeeze(-1), reduce_x
+        pooled_embeds = torch.sum(attn_weight * token_embeds, dim=1)
+        return attn_weight.squeeze(-1), pooled_embeds
 
 
 class MeatGenomeForSEQEmbeddingModelWithGraphForAbundance(MetaGenomePreTrainedModel):
+    """Predict abundance from token and sample embeddings."""
+
     def __init__(self, config: MetaGenomeConfig, **kwargs):
         super().__init__(config)
         self.model = MeatGenomeForSEQEmbeddingModelWithGraph(config)
@@ -117,29 +135,32 @@ class MeatGenomeForSEQEmbeddingModelWithGraphForAbundance(MetaGenomePreTrainedMo
         )
 
     def forward(self, input_ids, attention_mask, padding_mask, abundance, adjacency, sample):
-        feat = self.model(input_ids, attention_mask, padding_mask, abundance, adjacency, sample)
+        """Return token-level and sample-level abundance logits."""
+        encoder_output = self.model(input_ids, attention_mask, padding_mask, abundance, adjacency, sample)
 
-        # # For token to predict id
-        # ids_logits = self.token2ids_header(feat.last_hidden_state)
+        # Historical token id head. It is not used in the current flow.
+        # ids_logits = self.token2ids_header(encoder_output.last_hidden_state)
 
-        # For token to predict abundance
-        token_logits = self.token2abu_header(feat.fusion_emb).squeeze(2)
+        # Token-level abundance prediction.
+        token_logits = self.token2abu_header(encoder_output.fusion_emb).squeeze(2)
 
-        # For sample to predict abundance
-        query_vec = self.token2query_header(feat.token_emb)
-        sample_logits = torch.bmm(query_vec, feat.sample_emb[..., None]).squeeze(2)
+        # Sample-level abundance prediction by matching token queries to sample embedding.
+        token_queries = self.token2query_header(encoder_output.token_emb)
+        sample_logits = torch.bmm(token_queries, encoder_output.sample_emb[..., None]).squeeze(2)
 
         return MetaGenomeModelOutput(
             token_logits=token_logits,
             sample_logits=sample_logits,
             # ids_logits=ids_logits,
-            fusion_emb=feat.fusion_emb,
-            sample_emb=feat.sample_emb,
-            attn_weight=feat.attn_weight
+            fusion_emb=encoder_output.fusion_emb,
+            sample_emb=encoder_output.sample_emb,
+            attn_weight=encoder_output.attn_weight
         )
 
 
 class MetaGenomeCTRModel(nn.Module):
+    """Contrastive wrapper for sample embeddings."""
+
     def __init__(self, model_name_or_path, adapter_name='ctr', is_inference=False):
         super().__init__()
         self.model = MeatGenomeForSEQEmbeddingModelWithGraph.from_pretrained(

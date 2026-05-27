@@ -1,16 +1,13 @@
-import os.path
-
 import torch
 import torch.nn as nn
-from peft import LoraConfig, get_peft_model, PeftModel
 
-from src.metagenome_model.config.configuration_model import MetaGenomeConfig
+from src.metagenome_model.models.finetune.finetuning_module import LinearHeader, MetaGenomePEFTModelOutput
 from src.metagenome_model.models.pretrain.metagenome_model import MeatGenomeForSEQEmbeddingModelWithGraph
-from src.metagenome_model.models.finetune.finetuning_module import *
-from src.metagenome_model.basic.utils import *
 
 
 class MetaGenomeForPhenotype(nn.Module):
+    """Phenotype prediction model built on the pretrained MetaGenome encoder."""
+
     def __init__(
             self,
             model_name_or_path,
@@ -26,6 +23,7 @@ class MetaGenomeForPhenotype(nn.Module):
             pretrained_model_name_or_path=model_name_or_path
             )
         if is_inference:
+            # Historical PEFT load path. It is not used in the current flow.
             # self.model = PeftModel.from_pretrained(
             #     model=self.model,
             #     model_id=os.path.join(model_name_or_path, adapter_name),
@@ -36,7 +34,7 @@ class MetaGenomeForPhenotype(nn.Module):
                 dropout_rate=dropout_rate
             )
         else:
-            # lora微调
+            # Historical LoRA fine-tuning path. It is kept for reference.
             # lora_config = LoraConfig(
             #     r=4,
             #     target_modules=[
@@ -54,13 +52,13 @@ class MetaGenomeForPhenotype(nn.Module):
             # self.model = get_peft_model(
             #     model=self.model, peft_config=lora_config, adapter_name=adapter_name
             # )
-            # 微调attn_pooling
+            # Historical option: fine-tune attention pooling only.
             # for name, param in self.model.named_parameters():
             #     if 'attn_pooling' in name:
             #         param.requires_grad = True
             #     else:
             #         param.requires_grad = False
-            # 冻结预训练
+            # Historical option: freeze pretrained encoder.
             # for name, param in self.model.named_parameters():
             #     param.requires_grad = False
             self.header = LinearHeader(input_dims=self.model.config.hidden_size, output_dims=15, dropout_rate=dropout_rate)
@@ -74,19 +72,25 @@ class MetaGenomeForPhenotype(nn.Module):
     def forward(self, input_ids, attention_mask, padding_mask, abundance, age, gender, domain_idx, sample=None,
                 adjacency=None,
                 moment_alpha=0.5, **kwargs):
-        feat = self.model(
+        """Encode sample features and predict phenotype labels."""
+        encoder_output = self.model(
             input_ids=input_ids, attention_mask=attention_mask, padding_mask=padding_mask,
             abundance=abundance, adjacency=adjacency, sample=sample
         )
-        out = self.header(sample_embeds=feat.sample_emb, age=age, gender=gender, abu_features=feat.abundance,
-                          domain_idx=domain_idx)
+        header_output = self.header(
+            sample_embeds=encoder_output.sample_emb,
+            age=age,
+            gender=gender,
+            abu_features=encoder_output.abundance,
+            domain_idx=domain_idx
+        )
 
         return MetaGenomePEFTModelOutput(
-            logits=out.logits,
-            state_logits=out.state_logits,
-            taxa_emb=feat.fusion_emb,
-            domain_logits=out.domain_logits,
-            sample_emb=feat.sample_emb,
-            fusion_emb1=out.emb,
-            fusion_emb=out.fusion_emb
+            logits=header_output.logits,
+            state_logits=header_output.state_logits,
+            taxa_emb=encoder_output.fusion_emb,
+            domain_logits=header_output.domain_logits,
+            sample_emb=encoder_output.sample_emb,
+            fusion_emb1=header_output.emb,
+            fusion_emb=header_output.fusion_emb
         )
