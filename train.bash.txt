@@ -1,0 +1,47 @@
+
+source /root/miniconda3/etc/profile.d/conda.sh
+
+conda activate /bgi-seq-model-2/codes/wangshengfu/00_envs/metagenome
+
+
+
+#export COMET_API_KEY="Jg07yXkfdREMDeK1GEXiQCPJY"
+# 选择 GPU 实例规格时，通过环境变量配置每个实例上的训练进程数量与 GPU 数量一致
+CUDA_VISIBLE_DEVICES=0
+
+accelerate launch \
+--config_file \
+/bgi-seq-model-2/codes/zhangkexin/MetaOrion/dsub/default_config.yaml \
+--machine_rank \
+0 \
+--main_process_port \
+17780 \
+--num_machines \
+1 \
+--num_processes \
+1 \
+/bgi-seq-model-2/codes/zhangkexin/MetaOrion/scripts/finetune_phenotype_model.py \
+--data_dir \
+/bgi-seq-model-2/datasets/zhangkexin/meta_index/preprocess/metaphlan4/fine-tune/nov.specific.random.5 \
+--model_name_or_path \
+/bgi-seq-model-2/codes/zhangkexin/meta_index/weight/llama/metagenome.sequence.nontoken.2.11 \
+--batch_size \
+48 \
+--mixed_precision \
+fp16 \
+--accumulation_step \
+2 \
+--learning_rate \
+1e-4 \
+--decay_gamma \
+0.999 \
+--decay_step \
+5 \
+--max_epochs \
+100 \
+--ablation_strategies \
+random_full \
+--output_home \
+/bgi-seq-model-2/codes/zhangkexin/meta_index/output/llama/v4/PanDisease/Split5.ablation.4.13 \
+--seed \
+42 \

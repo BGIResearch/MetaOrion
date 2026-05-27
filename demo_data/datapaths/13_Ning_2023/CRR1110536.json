@@ -1,0 +1,32 @@
+{
+    "sampleid": "CRR1110536",
+    "taxa": [
+        "s__Bifidobacterium_longum",
+        "s__Sutterella_SGB9281",
+        "s__Candidatus_Saccharibacteria_unclassified_SGB19850",
+        "s__Streptococcus_parasanguinis",
+        "s__Haemophilus_parainfluenzae",
+        "s__Rothia_mucilaginosa",
+        "s__Streptococcus_sp_A12",
+        "s__Actinomyces_graevenitzii",
+        "s__Streptococcus_oralis",
+        "s__Lactobacillus_mucosae",
+        "s__Corynebacterium_argentoratense",
+        "s__Sutterella_sp_AM11_39"
+    ],
+    "abundance": [
+        0.70756,
+        3.517,
+        0.55561,
+        12.67065,
+        39.38701,
+        4.10378,
+        3.4321,
+        1.77461,
+        0.4036,
+        6.46042,
+        1.92094,
+        25.06671
+    ],
+    "disease_united": "IBD"
+}
