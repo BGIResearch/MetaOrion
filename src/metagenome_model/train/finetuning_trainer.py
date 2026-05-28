@@ -7,7 +7,6 @@
 # @Email   : zhangchao5@genomics.cn
 import os
 import torch
-import math
 import numpy as np
 import torch.nn.functional as F
 from tqdm import tqdm
@@ -31,9 +30,6 @@ class MetaGenomeForPhenotypeTrainer(Kernel):
         self.model = MetaGenomeForPhenotype(
             model_name_or_path=self.model_name_or_path,
             dropout_rate=self.dropout_rate,
-            split=self.split,
-            init_strategy=getattr(self, "init_strategy", "pretrained"),
-            reinit_topk=getattr(self, "reinit_topk", 0),
         )
         self.register_optimizer(params=self.model.parameters(), weight_decay=self.weight_decay)
 
@@ -68,7 +64,6 @@ class MetaGenomeForPhenotypeTrainer(Kernel):
 
             batch_iters = tqdm(self.train_dataloader) if self.accelerator.is_main_process else self.train_dataloader
             epoch_loss = []
-            moment_alpha = 1. - 0.5 * (1. + math.cos(math.pi * eph / self.max_epochs)) * (1. - 0.99)
             for idx, sample in enumerate(batch_iters):
                 self.model.train()
 
@@ -80,9 +75,7 @@ class MetaGenomeForPhenotypeTrainer(Kernel):
                             padding_mask=sample['padding_mask'],
                             abundance=sample['bin_abundance'],
                             age=sample['batch_age'],
-                            gender=sample['batch_gender'],
-                            domain_idx=sample['domain_idx'],
-                            moment_alpha=moment_alpha)
+                            gender=sample['batch_gender'])
                         # pan-disease
                         mask = sample['batch_label'] != 0
                         filtered_logits = output.logits[mask]
@@ -138,9 +131,7 @@ class MetaGenomeForPhenotypeTrainer(Kernel):
                         padding_mask=val_sample['padding_mask'],
                         abundance=val_sample['bin_abundance'],
                         age=val_sample['batch_age'],
-                        gender=val_sample['batch_gender'],
-                        domain_idx=val_sample['domain_idx'],
-                        moment_alpha=moment_alpha)
+                        gender=val_sample['batch_gender'])
 
                     Panacc_list.append(self.accelerator.gather_for_metrics(
                         (val_output.state_logits.flatten().sigmoid() >= 0.5).long().eq(

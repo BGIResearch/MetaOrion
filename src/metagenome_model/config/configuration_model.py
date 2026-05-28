@@ -36,7 +36,6 @@ class MetaGenomeConfig(PretrainedConfig):
             attention_bias=False,
             attention_dropout=0.0,
             is_causal=False,
-            use_graph=True,
             recon_token=True,
             n_experts=32,
             n_activate_experts=6,
@@ -66,7 +65,6 @@ class MetaGenomeConfig(PretrainedConfig):
         self.attention_dropout = attention_dropout
         self.attn_type = kwargs.get('attn_implementation', 'diff_flash_attn')
         self.is_causal = is_causal
-        self.use_graph = use_graph
         self.recon_token = recon_token
         self.n_experts = n_experts
         self.n_activate_experts = n_activate_experts

@@ -126,7 +126,7 @@ class LinearHeader(Header):
             nn.Linear(input_dims // 8, 1)
         )
 
-    def forward(self, sample_embeds, age, gender, abu_features, domain_idx=None, **kwargs):
+    def forward(self, sample_embeds, age, gender):
         """Input: sample features. Output: disease logits and state logits."""
         age_embeds = self.age_embed(age[..., None])
         gender_embeds = self.gender_embed(gender)

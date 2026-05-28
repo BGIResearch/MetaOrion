@@ -26,8 +26,7 @@ class MetaGenomeSEQDataset(Dataset):
 
     def __init__(self, **kwargs):
         self.__dict__.update(**kwargs)
-        # self.tokenizer = MetaGenomeTokenizer(model_name_or_path=self.model_name_or_path)
-        self.tokenizer = MetaGenomeTokenizer(model_name_or_path=f'/bgi-seq-model-2/codes/zhangkexin/meta_index/weight/llama/metagenome.sequence.nontoken.2.11/')
+        self.tokenizer = MetaGenomeTokenizer(model_name_or_path=self.model_name_or_path)
         self.PAN_LABELS = {
             'healthy': 0,
             'IBD': 1,
@@ -74,7 +73,6 @@ class MetaGenomeSEQDataset(Dataset):
         return {
             'seq': seq,
             'abundance': abundance,
-            'adjacency': -1,
             'idx': ix,
             'filename': name,
             'label': data['label'] if 'label' in data.keys() and data['label'] is not None else -1,
@@ -82,42 +80,10 @@ class MetaGenomeSEQDataset(Dataset):
             'mask': mask_flag
         }
 
-    def tree_to_list(self, tree):
-        result = []
-        for key, value in tree.items():
-            result.append(key)
-            result.extend(self.tree_to_list(value))
-        return result
-
-    def find_node(self, tree, node):
-        if node in tree.keys():
-            return list(tree[node].keys())
-
-        for key, val in tree.items():
-            res = self.find_node(val, node)
-            if res:
-                return res
-        return []
-
-    @staticmethod
-    def get_adjacency(node_pairs, seq_list, add_self_node=True):
-        num_node = len(seq_list)
-
-        adj_matrix = np.zeros((num_node, num_node))
-
-        for (i, j) in node_pairs:
-            if i in seq_list and j in seq_list:
-                adj_matrix[seq_list.index(i), seq_list.index(j)] = 1.
-        if add_self_node:
-            for i in range(num_node):
-                adj_matrix[i, i] = 1.
-
-        return adj_matrix
-
     def collate_fn(self, batch_sample):
         batch_seq, batch_label = [], []
         batch_filenames, batch_indices = [], []
-        batch_adj, batch_abu = [], []
+        batch_abu = []
 
         batch_masked_seq, batch_mask = [], []
         batch_age, batch_gender = [], []
@@ -125,7 +91,6 @@ class MetaGenomeSEQDataset(Dataset):
         for sample in batch_sample:
             batch_seq.append(' '.join(sample['seq']))
             batch_abu.append(sample['abundance'])
-            batch_adj.append(sample['adjacency'])
             batch_label.append(sample['label'])
             batch_filenames.append(sample['filename'])
             batch_indices.append(sample['idx'])
@@ -136,7 +101,7 @@ class MetaGenomeSEQDataset(Dataset):
             batch_seq, add_special_tokens=True, padding=True, return_tensors='pt')
         length = seq_tokens['input_ids'].size(1)
         abundance, mask = self.batch_padding(
-            abundance=batch_abu, adjacency=batch_adj, mask=batch_mask, length=length)
+            abundance=batch_abu, mask=batch_mask, length=length)
 
         batch_label = torch.tensor(batch_label)
 
@@ -144,7 +109,6 @@ class MetaGenomeSEQDataset(Dataset):
             'input_ids': seq_tokens['input_ids'],
             'attention_mask': mask,
             'padding_mask': seq_tokens['attention_mask'],
-            'adjacency': -1,
             'bin_abundance': abundance,
             'batch_label': batch_label,
             'batch_filenames': batch_filenames,
@@ -154,7 +118,7 @@ class MetaGenomeSEQDataset(Dataset):
             'batch_gender': batch_gender
         }
 
-    def batch_padding(self, abundance, adjacency, mask=None, length=1000):
+    def batch_padding(self, abundance, mask=None, length=1000):
         binning_abundance = [self.binning(x) for x in abundance]
         binning_abundance = torch.tensor(
             np.array([np.pad(x, (0, length - x.shape[0]))
@@ -241,7 +205,6 @@ class MetaGenomeSortSEQLengthForFinetuneDataset(MetaGenomeSortSEQLengthDataset):
         return {
             'seq': seq,
             'abundance': abundance,
-            'adjacency': -1,
             'idx': ix,
             'filename': name,
             'label': data['disease_united'],
@@ -254,7 +217,7 @@ class MetaGenomeSortSEQLengthForFinetuneDataset(MetaGenomeSortSEQLengthDataset):
 
         batch_seq, batch_label = [], []
         batch_filenames, batch_indices = [], []
-        batch_adj, batch_abu = [], []
+        batch_abu = []
 
         batch_age, batch_gender = [], []
         batch_project = []
@@ -263,7 +226,6 @@ class MetaGenomeSortSEQLengthForFinetuneDataset(MetaGenomeSortSEQLengthDataset):
         for sample in batch_sample:
             batch_seq.append(' '.join(sample['seq']))
             batch_abu.append(sample['abundance'])
-            batch_adj.append(sample['adjacency'])
             if isinstance(sample['label'], str):
                 batch_label.append(self.PAN_LABELS[sample['label']])
                 if sample['label'] == 'Healthy' or sample['label'] == 'healthy':
@@ -285,7 +247,7 @@ class MetaGenomeSortSEQLengthForFinetuneDataset(MetaGenomeSortSEQLengthDataset):
             batch_seq, add_special_tokens=True, padding=True, return_tensors='pt')
         length = seq_tokens['input_ids'].size(1)
         abundance, mask = self.batch_padding(
-            abundance=batch_abu, adjacency=batch_adj, mask=None, length=length)
+            abundance=batch_abu, mask=None, length=length)
 
         batch_label = torch.tensor(batch_label)
         batch_age = torch.tensor(batch_age, dtype=torch.float32)
@@ -303,7 +265,6 @@ class MetaGenomeSortSEQLengthForFinetuneDataset(MetaGenomeSortSEQLengthDataset):
             'batch_indices': batch_indices,
             'batch_age': batch_age,
             'batch_gender': batch_gender,
-            'domain_idx': -1,
             'batch_seq': batch_seq,
             'batch_state': batch_state,
         }

@@ -7,16 +7,12 @@
 # @Email   : zhangchao5@genomics.cn
 from __future__ import annotations
 
-import os.path
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from peft import PeftModel, LoraConfig, get_peft_model
 from transformers.models.llama.modeling_llama import LlamaRMSNorm
 
 from src.metagenome_model.config.configuration_model import MetaGenomeConfig
-from src.metagenome_model.models.pretrain.gcn_layer import CustomGCNLayer
 from src.metagenome_model.models.pretrain.metagenome_module import MetaGenomePreTrainedModel, MetaGenomeModelOutput, MetaGenomeModel
 
 
@@ -34,15 +30,10 @@ class MeatGenomeForSEQEmbeddingModelWithGraph(MetaGenomePreTrainedModel):
         )
 
         self.sequence_model = MetaGenomeModel(config)
-        if config.use_graph:
-            self.graph_model = CustomGCNLayer(config.hidden_size)
-        else:
-            self.register_parameter('graph_model', None)
-
         self.fusion = nn.Linear(config.hidden_size * 2, config.hidden_size)
         self.attn_pooling = AttentionPooling(config.hidden_size, config.hidden_size)
 
-    def forward(self, input_ids, attention_mask, padding_mask, abundance, adjacency, sample):
+    def forward(self, input_ids, attention_mask, padding_mask, abundance):
         """Run token embedding, abundance embedding, optional graph fusion, and sample pooling."""
         tokens_embed, abundance_embed, hidden_states = self._encode_sequence(
             input_ids=input_ids,
@@ -50,10 +41,9 @@ class MeatGenomeForSEQEmbeddingModelWithGraph(MetaGenomePreTrainedModel):
             padding_mask=padding_mask,
             abundance=abundance
         )
-        fusion_emb = self._fuse_graph_states(
+        fusion_emb = self._fuse_token_features(
             hidden_states=hidden_states,
-            abundance_embed=abundance_embed,
-            adjacency=adjacency
+            abundance_embed=abundance_embed
         )
         attn_weight, sample_emb = self.attn_pooling(fusion_emb, padding_mask)
 
@@ -77,12 +67,8 @@ class MeatGenomeForSEQEmbeddingModelWithGraph(MetaGenomePreTrainedModel):
         ).last_hidden_state
         return tokens_embed, abundance_embed, hidden_states
 
-    def _fuse_graph_states(self, hidden_states, abundance_embed, adjacency):
-        """Input: sequence states and graph. Output: fused token embeddings."""
-        # Fuse sequence states with graph states when graph is enabled.
-        if self.graph_model is not None:
-            graph_states = self.graph_model(hidden_states, adjacency)
-            hidden_states = hidden_states + graph_states
+    def _fuse_token_features(self, hidden_states, abundance_embed):
+        """Input: sequence and abundance embeddings. Output: fused token embeddings."""
         return self.fusion(torch.cat((hidden_states, abundance_embed), -1))
 
 
@@ -134,9 +120,9 @@ class MeatGenomeForSEQEmbeddingModelWithGraphForAbundance(MetaGenomePreTrainedMo
             nn.Linear(config.hidden_size, config.hidden_size, bias=False)
         )
 
-    def forward(self, input_ids, attention_mask, padding_mask, abundance, adjacency, sample):
+    def forward(self, input_ids, attention_mask, padding_mask, abundance):
         """Return token-level and sample-level abundance logits."""
-        encoder_output = self.model(input_ids, attention_mask, padding_mask, abundance, adjacency, sample)
+        encoder_output = self.model(input_ids, attention_mask, padding_mask, abundance)
 
         # Historical token id head. It is not used in the current flow.
         # ids_logits = self.token2ids_header(encoder_output.last_hidden_state)
@@ -155,74 +141,6 @@ class MeatGenomeForSEQEmbeddingModelWithGraphForAbundance(MetaGenomePreTrainedMo
             fusion_emb=encoder_output.fusion_emb,
             sample_emb=encoder_output.sample_emb,
             attn_weight=encoder_output.attn_weight
-        )
-
-
-class MetaGenomeCTRModel(nn.Module):
-    """Contrastive wrapper for sample embeddings."""
-
-    def __init__(self, model_name_or_path, adapter_name='ctr', is_inference=False):
-        super().__init__()
-        self.model = MeatGenomeForSEQEmbeddingModelWithGraph.from_pretrained(
-            pretrained_model_name_or_path=model_name_or_path
-        )
-        if is_inference:
-            self.model = PeftModel.from_pretrained(
-                model=self.model,
-                model_id=os.path.join(model_name_or_path, adapter_name),
-                device_map='cpu'
-            )
-            self.register_parameter('proj_q', None)
-            self.register_parameter('proj_k', None)
-        else:
-            lora_config = LoraConfig(
-                r=8,
-                target_modules=[
-                    'q_proj',
-                    'k_proj',
-                    'v_proj',
-                    'o_proj',
-                ],
-                lora_alpha=8,
-                lora_dropout=0.1,
-                inference_mode=False
-            )
-            self.model = get_peft_model(
-                model=self.model, peft_config=lora_config, adapter_name=adapter_name
-            )
-
-            # self.logit = nn.Linear(self.model.config.hidden_size, 1)
-
-            self.proj_q = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size // 4, bias=False)
-            self.proj_k = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size // 4, bias=False)
-            for param_q, param_k in zip(self.proj_q.parameters(), self.proj_k.parameters()):
-                param_k.data.copy_(param_q.data)
-                param_k.requires_grad = False
-
-    @torch.no_grad()
-    def _momentum_update_proj_k(self, alpha=0.5):
-        for param_q, param_k in zip(self.proj_q.parameters(), self.proj_k.parameters()):
-            param_k.data = param_k.data * alpha + param_q.data * (1.0 - alpha)
-
-    def forward(self, input_ids, attention_mask, padding_mask, abundance, adjacency, moment_alpha=1.):
-        feat = self.model(
-            input_ids=input_ids, attention_mask=attention_mask, padding_mask=padding_mask,
-            abundance=abundance, adjacency=adjacency
-        )
-        # token_logits = self.logit(feat.fusion_emb)
-
-        proj_emb_k, proj_emb_q = None, None
-        if self.training:
-            with torch.no_grad():
-                self._momentum_update_proj_k(alpha=moment_alpha)
-                proj_emb_k = self.proj_k(feat.sample_emb)
-            proj_emb_q = self.proj_q(feat.sample_emb)
-
-        return MetaGenomeModelOutput(
-            sample_emb=feat.sample_emb,
-            proj_emb_q=proj_emb_q,
-            proj_emb_k=proj_emb_k,
-            # token_logits=token_logits,
         )
 
 

@@ -8,8 +8,7 @@ import numpy as np
 from tqdm import tqdm
 
 from src.metagenome_model.basic.kernel import Kernel
-from src.metagenome_model.models.pretrain.metagenome_model import MeatGenomeForSEQEmbeddingModelWithGraph, \
-    MeatGenomeForSEQEmbeddingModelWithGraphForAbundance
+from src.metagenome_model.models.pretrain.metagenome_model import MeatGenomeForSEQEmbeddingModelWithGraphForAbundance
 
 
 class MetaGenomeSEQInference(Kernel):
@@ -44,9 +43,7 @@ class MetaGenomeSEQInference(Kernel):
                 attention_mask=sample['attention_mask'],
                 padding_mask=sample['padding_mask'],
                 # ignore `<pad>` token's abundance
-                abundance=sample['bin_abundance'] * (1 - sample['attention_mask']) - sample['attention_mask'],
-                adjacency=sample['adjacency'],
-                sample=sample
+                abundance=sample['bin_abundance'] * (1 - sample['attention_mask']) - sample['attention_mask']
             )
 
             seq_len = sample['padding_mask'].sum(1)
@@ -66,7 +63,7 @@ class MetaGenomeSEQInference(Kernel):
                         'label': sample['batch_label'].cpu()[sample_id].item(),
                     }, fp)
 
-            # 计算预测丰度与真实值距离
+            # Compare predicted abundance with observed abundance.
             s_logits = torch.where(feat.sample_logits < 0, torch.zeros_like(feat.sample_logits), feat.sample_logits)
             s_pad_d = self.bray_curtis_distance(s_logits, sample['bin_abundance'], sample['padding_mask'])
             s_attn_d = self.bray_curtis_distance(s_logits, sample['bin_abundance'], sample['attention_mask'])

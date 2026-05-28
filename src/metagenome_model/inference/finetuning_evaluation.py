@@ -15,7 +15,7 @@ class MetaGenomeForPhenotypeInfer(Kernel):
         self.dataloader = self.register_dataloader(custom_dataset=MetaGenomeSortSEQLengthForFinetuneDataset,
                                                    is_inference=True)
         self.model = MetaGenomeForPhenotype(model_name_or_path=self.model_name_or_path, dropout_rate=self.dropout_rate,
-                                            split=self.split, is_inference=True)
+                                            is_inference=True)
         self.figs_path = self.register_dir(os.path.join(self.output_home, 'figs'))
         self.probs_path = self.register_dir(os.path.join(self.output_home, 'probs'))
         self.PAN_LABELS = {
@@ -64,9 +64,7 @@ class MetaGenomeForPhenotypeInfer(Kernel):
                     padding_mask=sample['padding_mask'],
                     abundance=sample['bin_abundance'],
                     age=sample['batch_age'],
-                    gender=sample['batch_gender'],
-                    domain_idx=sample['domain_idx'],
-                    sample=sample
+                    gender=sample['batch_gender']
                 )
 
                 # # # save taxa and sample embedding
@@ -83,7 +81,7 @@ class MetaGenomeForPhenotypeInfer(Kernel):
                             'embedding': taxa_emb,
                             'binned_abundance': bin_abu,
                             # 'sample_embedding': output.sample_emb[sample_id].cpu().numpy(),
-                            'finetune_embedding': output.fusion_emb1[sample_id].cpu().numpy(), # 可视化用这个
+                            'finetune_embedding': output.fusion_emb1[sample_id].cpu().numpy(), # For visualization.
                             # 'fusion_embedding': output.fusion_emb[sample_id].cpu().numpy(),
                             'label': pan_label2id[sample['batch_label'].cpu()[sample_id].item()]
                         }, fp)
