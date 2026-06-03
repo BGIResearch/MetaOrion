@@ -7,7 +7,7 @@
 # @Email   : zhangchao5@genomics.cn
 from __future__ import annotations
 
-from typing import Optional, Tuple, Union, List, overload
+from typing import Optional, Tuple, Union, List
 
 import os
 import torch
@@ -15,14 +15,11 @@ import torch.nn as nn
 from dataclasses import dataclass
 
 from transformers import PreTrainedModel, StaticCache, DynamicCache, Cache
-from transformers.modeling_attn_mask_utils import AttentionMaskConverter
 from transformers.modeling_outputs import BaseModelOutputWithPast
-from transformers.models.llama.modeling_llama import LlamaAttention, LlamaFlashAttention2, LlamaMLP, LlamaRMSNorm
+from transformers.models.llama.modeling_llama import LlamaAttention, LlamaMLP, LlamaRMSNorm
 from transformers.utils import ModelOutput
 
 from src.metagenome_model.config.configuration_model import MetaGenomeConfig
-from src.metagenome_model.models.pretrain.diff_attn import DiffAttention
-from src.metagenome_model.models.pretrain.diff_flash_attn import DiffFlashAttention
 
 
 @dataclass
@@ -41,9 +38,6 @@ class MetaGenomeModelOutput(ModelOutput):
 
 MetaGenome_ATTN_CLASS = {
     'llama_attn': LlamaAttention,
-    'diff_attn': DiffAttention,
-    'diff_flash_attn': DiffFlashAttention,
-    'flash_attention_2': LlamaFlashAttention2
 }
 
 
@@ -127,12 +121,6 @@ class MetaGenomePreTrainedModel(PreTrainedModel):
                 module.weight.data[module.padding_idx].zero_()
 
     def _setup_cache(self, cache_cls, max_batch_size, max_cache_len: Optional[int] = None):
-        if self.config.attn_type in ["diff_flash_attn", "flash_attention_2"] and cache_cls == StaticCache:
-            raise ValueError(
-                "`static` cache implementation is not compatible with `attn_implementation==flash_attn` "
-                "make sure to use `sdpa` in the mean time, and open an issue at https://github.com/huggingface/transformers"
-            )
-
         for layer in self.model.layers:
             device = layer.input_layernorm.weight.device
             if hasattr(self.config, "_pre_quantization_dtype"):

@@ -9,16 +9,14 @@ from __future__ import annotations
 
 import os
 import torch
-import socket
 from abc import abstractmethod
 from dataclasses import field
-from datetime import timedelta, datetime
+from datetime import timedelta
 from pathlib import Path
 
 from accelerate import DistributedDataParallelKwargs, InitProcessGroupKwargs, Accelerator
-from torch.utils.data import SequentialSampler, DataLoader
-from transformers import set_seed, PreTrainedModel, get_cosine_schedule_with_warmup
-from torch.optim.lr_scheduler import SequentialLR, LinearLR, CosineAnnealingLR
+from torch.utils.data import DataLoader
+from transformers import set_seed, PreTrainedModel
 
 from src.metagenome_model.basic.metagenome_dataset import MetaGenomeSortSEQLengthDataset
 
@@ -35,7 +33,6 @@ class Kernel:
     train_data_path: str = field(default=None, metadata={'help': 'dataset path'})
     val_data_path: str = field(default=None, metadata={'help': 'validate dataset path'})
     model_name_or_path: str = field(default=None, metadata={'help': 'model name or path'})
-    tokenizer_path: str = field(default=None, metadata={'help': 'tokenizer path'})
     split: str = field(default=None, metadata={'help': 'split'})
     mixed_precision: str = field(default='fp16', metadata={
         "help": "mixed precision type. option: ['fp16', 'fp8', 'bf16', 'no']"})
@@ -49,13 +46,6 @@ class Kernel:
     output_home: str = field(default='output', metadata={"help": "output home"})
     decay_gamma: float = field(default=0.995, metadata={'help': 'learning rate decay gamma'})
     decay_step: int = field(default=10, metadata={'help': 'learning rate decay step'})
-
-    # tracker parameters
-    tracker_name: str = field(default='wandb', metadata={"help": "logger name"})
-    username: str = field(default=None, metadata={"help": "tracker username"})
-    projectname: str = field(default=None, metadata={"help": "tracker project name"})
-    group: str = field(default=None, metadata={"help": "tracker group"})
-    job_type: str = field(default='training', metadata={"help": "tracker job type"})
 
     def __init__(self, **kwargs):
         self.__dict__.update(**kwargs)
@@ -77,11 +67,6 @@ class Kernel:
                                            split=self.split)
             val_dataset = custom_dataset(data_path=self.val_data_path, model_name_or_path=self.model_name_or_path,
                                          split=self.split)
-            # sampler = SequentialSampler(dataset)
-            # batch_sampler = MetaGenomeSortedBatchSampler(sampler, batch_size=self.batch_size, drop_last=drop_last)
-            # dataloader = DataLoader(
-            #     dataset, batch_sampler=batch_sampler, collate_fn=dataset.collate_fn, num_workers=num_workers
-            # )
             train_dataloader = DataLoader(
                 train_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=train_dataset.collate_fn,
                 drop_last=drop_last, num_workers=num_workers, persistent_workers=False)
@@ -95,7 +80,6 @@ class Kernel:
         process_group_kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=1800))
         self.accelerator = Accelerator(
             mixed_precision=self.mixed_precision,
-            # log_with=self.tracker_name,
             gradient_accumulation_steps=self.accumulation_step,
             kwargs_handlers=[process_group_kwargs, ddp_kwargs]
         )
@@ -105,33 +89,6 @@ class Kernel:
         Path(dir_name).mkdir(parents=True, exist_ok=True)
         return dir_name
 
-    def register_wandb(self):
-        os.environ["WANDB_MODE"] = "offline"
-        if self.job_type == 'training':
-            config = {
-                'init_learning_rate': self.learning_rate,
-                'batch_size': self.batch_size,
-                'max_epochs': self.max_epochs,
-            }
-        else:
-            config = None
-
-        self.accelerator.init_trackers(
-            project_name=self.projectname,
-            config=config,
-            init_kwargs={
-                'wandb': {
-                    'entity': self.username,
-                    'notes': socket.gethostname(),
-                    'name': f"MetaGenome_{datetime.now().strftime('%d_%m_%Y_%H')}",
-                    'group': self.group,
-                    'dir': self.output_home,
-                    'job_type': self.job_type,
-                    'reinit': True,
-                }
-            }
-        )
-
     def register_optimizer(self, params, weight_decay):
         self.optimizer = torch.optim.AdamW(params, weight_decay=weight_decay, lr=self.learning_rate)
 
@@ -139,17 +96,6 @@ class Kernel:
         lr = self.learning_rate * (decay_gamma ** (epoch // decay_step))
         for param_group in self.optimizer.param_groups:
             param_group['lr'] = lr
-
-    def warmup_lr(self, train_loader, optimizer):
-        steps_per_epoch = len(train_loader)
-        total_steps = self.max_epochs * steps_per_epoch
-
-        warmup_steps = int(0.1 * total_steps)
-        self.scheduler = get_cosine_schedule_with_warmup(
-            optimizer,
-            num_warmup_steps=warmup_steps,
-            num_training_steps=total_steps
-        )
 
     def prepare(self):
         self.model = self.accelerator.prepare_model(self.model)
@@ -181,36 +127,4 @@ class Kernel:
         self.accelerator.print(
             f'Trainable Params:|| Trainable: {trainable} || All: {total} || Rate: {(trainable / total) * 100:.2f}%'
         )
-
-    def reload_weights(self, model_name_or_path):
-        ckpt_name = 'pytorch_model.bin'
-        ckpt = torch.load(os.path.join(model_name_or_path, ckpt_name), map_location='cpu')
-        state_dict = self.model.state_dict()
-
-        matched_dict = {}
-        unmatched_ckpt2model = {}
-        unmatched_model2ckpt = {}
-        for key, val in ckpt.items():
-            if key in state_dict.keys():
-                matched_dict[key] = val
-            else:
-                unmatched_ckpt2model[key] = val
-
-        for key, val in state_dict.items():
-            if key not in matched_dict.keys():
-                unmatched_model2ckpt[key] = val
-
-        state_dict.update(matched_dict)
-        self.model.load_state_dict(state_dict)
-
-        for param in self.model.parameters():
-            param.requires_grad = True
-
-        if len(unmatched_ckpt2model) != 0:
-            print(f'Some of the weights in the checkpoint are not used for model initialization! '
-                  f'\n {list(unmatched_ckpt2model.keys())}')
-        if len(unmatched_model2ckpt) != 0:
-            print(
-                f'The weights for some parameters in the model are missing from the checkpoint, they will be randomly initialized! '
-                f'\n {list(unmatched_ckpt2model.keys())}')
 

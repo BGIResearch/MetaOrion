@@ -21,12 +21,7 @@ def register_params():
         '--accumulation_step', type=str, default=1, help='gradient accumulation steps')
     parser.add_argument('--batch_size', type=int, help='batch size')
     parser.add_argument('--output_home', type=str, help='output home')
-
-    parser.add_argument('--tracker_name', default='wandb', type=str, help='tracker name')
-    parser.add_argument('--username', type=str, help='wandb user name')
-    parser.add_argument('--projectname', type=str, help='wandb project name')
-    parser.add_argument('--group', type=str, help='wandb group')
-    parser.add_argument('--job_type', type=str, default='inference', help='wandb job type')
+    parser.add_argument('--dropout_rate', type=float, default=0.2, help='dropout rate')
 
     return parser.parse_args()
 
@@ -41,10 +36,6 @@ def worker():
 
     result_df = {'precision': [], 'recall': [], 'F1': [], 'acc': [], 'AUC': [], 'AUPR': [], 'MCC': []}
     multi_result_df = {'precision': [], 'recall': [], 'F1': [], 'acc': [], 'MCC': []}
-    args_dict['dropout_rate'] = 0.2
-    args_dict['weight_decay'] = 1e-3
-    args_dict['learning_rate'] = 1e-4
-    args_dict['tokenizer_path'] = model_name_or_path
     s_list=[]
     for s in ['split' + str(i) for i in range(1, 6)]:
         s_list.append(s)
@@ -52,7 +43,7 @@ def worker():
 
         args_dict['val_data_path'] = os.path.join(args_dict['data_dir'], f'{s}.change/datapath.{cohort}.test')
         args_dict['model_name_or_path'] = os.path.join(model_name_or_path, s, 'best_ckpt/')
-        args_dict['output_home'] = os.path.join(output_home, s)
+        args_dict['output_home'] = os.path.join(output_home, s, 'best_ckpt/result/')
 
         runner = MetaGenomeForPhenotypeInfer(**args_dict)
         pan_metrics, multi_metrics = runner.inference()

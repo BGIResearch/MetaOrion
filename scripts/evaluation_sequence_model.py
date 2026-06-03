@@ -22,12 +22,6 @@ def register_params():
     parser.add_argument('--batch_size', type=int, help='batch size')
     parser.add_argument('--output_home', type=str, help='output home')
 
-    parser.add_argument('--tracker_name', default='wandb', type=str, help='tracker name')
-    parser.add_argument('--username', type=str, help='wandb user name')
-    parser.add_argument('--projectname', type=str, help='wandb project name')
-    parser.add_argument('--group', type=str, help='wandb group')
-    parser.add_argument('--job_type', type=str, default='inference', help='wandb job type')
-
     return parser.parse_args()
 
 

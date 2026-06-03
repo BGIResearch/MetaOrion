@@ -63,7 +63,7 @@ class MetaGenomeConfig(PretrainedConfig):
         self._rope_scaling_validation()
         self.attention_bias = attention_bias
         self.attention_dropout = attention_dropout
-        self.attn_type = kwargs.get('attn_implementation', 'diff_flash_attn')
+        self.attn_type = kwargs.get('attn_type', kwargs.get('attn_implementation', 'llama_attn'))
         self.is_causal = is_causal
         self.recon_token = recon_token
         self.n_experts = n_experts

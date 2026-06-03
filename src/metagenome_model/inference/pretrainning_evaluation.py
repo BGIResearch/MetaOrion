@@ -26,8 +26,6 @@ class MetaGenomeSEQInference(Kernel):
 
     @torch.no_grad()
     def inference(self, **kwargs):
-        # self.register_wandb()
-
         self.model, self.dataloader = self.accelerator.prepare(self.model, self.dataloader)
         self.model.eval()
         batch_iters = tqdm(self.dataloader) if self.accelerator.is_main_process else self.dataloader

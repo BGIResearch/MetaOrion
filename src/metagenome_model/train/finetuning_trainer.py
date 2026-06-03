@@ -12,7 +12,7 @@ import torch.nn.functional as F
 from tqdm import tqdm
 
 
-from src.metagenome_model.basic.utils import *
+from src.metagenome_model.basic.utils import EMA, GHMC_Loss
 from src.metagenome_model.basic.kernel import Kernel
 # from Meta_Index.MetaIndex.metagenome.basic.losses import contrastive_loss
 from src.metagenome_model.basic.metagenome_dataset import MetaGenomeSortSEQLengthForFinetuneDataset
@@ -48,7 +48,6 @@ class MetaGenomeForPhenotypeTrainer(Kernel):
         return weight_norm
 
     def train(self, **kwargs):
-        self.register_wandb()
         self.prepare()
         ema = EMA(self.accelerator.unwrap_model(self.model), decay=0.995)
         ghmloss = GHMC_Loss(bins=10, alpha=0.9)
@@ -105,13 +104,6 @@ class MetaGenomeForPhenotypeTrainer(Kernel):
                         'EPH': f'{eph + 1:03d}', 'Loss': f'{loss.item():.4f}',
                         'Pan-Acc': f'{batch_acc1.item():.5f}',
                         'Acc': f'{batch_acc2.item():.5f}',
-                    })
-
-                    self.accelerator.log({
-                        'PEFT Loss': loss.item(),
-                        'PEFT Learning Rate': self.optimizer.state_dict()['param_groups'][0]['lr'],
-                        'PEFT Batch Pan-Acc (Training)': batch_acc1.item(),
-                        'PEFT Batch Acc (Training)': batch_acc2.item(),
                     })
 
                     if idx % BATCH_CHECKPOINT_STEP == 0:

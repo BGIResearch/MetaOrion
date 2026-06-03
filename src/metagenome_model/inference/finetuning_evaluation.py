@@ -3,7 +3,10 @@ import pickle
 from tqdm import tqdm
 from sklearn.metrics import classification_report, auc, precision_recall_curve
 
-from src.metagenome_model.basic.utils import *
+import pandas as pd
+import torch
+from sklearn.metrics import matthews_corrcoef, roc_auc_score
+
 from src.metagenome_model.basic.kernel import Kernel
 from src.metagenome_model.basic.metagenome_dataset import MetaGenomeSortSEQLengthForFinetuneDataset
 from src.metagenome_model.models.finetune.finetuning_model import MetaGenomeForPhenotype
@@ -74,17 +77,17 @@ class MetaGenomeForPhenotypeInfer(Kernel):
                     taxa_emb = output.taxa_emb[sample_id][:seq_len[sample_id].item()].cpu().numpy()
                     taxa = sample['batch_seq'][sample_id].split(' ')
                     bin_abu = sample['bin_abundance'][sample_id][:seq_len[sample_id].item()].cpu().numpy()
-                    os.makedirs(os.path.join(self.output_home, 'emb'), exist_ok=True)
-                    with open(os.path.join(self.output_home, 'emb', sample['batch_filenames'][sample_id].split('.json')[0]+'.pkl'), 'wb') as fp:
-                        pickle.dump({
-                            'taxa': taxa,
-                            'embedding': taxa_emb,
-                            'binned_abundance': bin_abu,
-                            # 'sample_embedding': output.sample_emb[sample_id].cpu().numpy(),
-                            'finetune_embedding': output.fusion_emb1[sample_id].cpu().numpy(), # For visualization.
-                            # 'fusion_embedding': output.fusion_emb[sample_id].cpu().numpy(),
-                            'label': pan_label2id[sample['batch_label'].cpu()[sample_id].item()]
-                        }, fp)
+                    # os.makedirs(os.path.join(self.output_home, 'emb'), exist_ok=True)
+                    # with open(os.path.join(self.output_home, 'emb', sample['batch_filenames'][sample_id].split('.json')[0]+'.pkl'), 'wb') as fp:
+                    #     pickle.dump({
+                    #         'taxa': taxa,
+                    #         'embedding': taxa_emb,
+                    #         'binned_abundance': bin_abu,
+                    #         # 'sample_embedding': output.sample_emb[sample_id].cpu().numpy(),
+                    #         'finetune_embedding': output.fusion_emb1[sample_id].cpu().numpy(), # For visualization.
+                    #         # 'fusion_embedding': output.fusion_emb[sample_id].cpu().numpy(),
+                    #         'label': pan_label2id[sample['batch_label'].cpu()[sample_id].item()]
+                    #     }, fp)
 
                 pred = output.logits.softmax(dim=-1).argmax(dim=-1)
                 state_pred = (output.state_logits.flatten().sigmoid() >= 0.5).long()
