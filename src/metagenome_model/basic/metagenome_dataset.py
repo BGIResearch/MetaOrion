@@ -201,12 +201,16 @@ class MetaGenomeSortSEQLengthForFinetuneDataset(MetaGenomeSortSEQLengthDataset):
         else:
             age = -1.
 
+        label = data.get('disease_united')
+        if label is None:
+            label = data.get('label', -1)
+
         return {
             'seq': seq,
             'abundance': abundance,
             'idx': ix,
             'filename': name,
-            'label': data['disease_united'],
+            'label': label,
             'age': age,
             'gender': gender,
             'project': data['project'] if 'project' in data.keys() else 0,

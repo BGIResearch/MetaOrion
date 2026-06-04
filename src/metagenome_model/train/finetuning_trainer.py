@@ -47,7 +47,7 @@ class MetaGenomeForPhenotypeTrainer(Kernel):
         ghmloss = GHMC_Loss(bins=10, alpha=0.9)
 
         best_score = [-np.Inf, np.Inf]
-        patience = 40
+        patience = self.patience
         patience_counter = 0
         multi_weights = torch.tensor(get_loss_weights(), device=self.accelerator.device, dtype=torch.float32)
         stop_training = torch.tensor(0).to(self.accelerator.device)

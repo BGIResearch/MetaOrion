@@ -36,9 +36,8 @@ def worker():
 
     result_df = {'precision': [], 'recall': [], 'F1': [], 'acc': [], 'AUC': [], 'AUPR': [], 'MCC': []}
     multi_result_df = {'precision': [], 'recall': [], 'F1': [], 'acc': [], 'MCC': []}
-    s_list = []
+    metric_splits = []
     for s in ['split' + str(i) for i in range(1, 6)]:
-        s_list.append(s)
         print(s)
 
         args_dict['val_data_path'] = os.path.join(args_dict['data_dir'], f'{s}.change/datapath.{cohort}.test')
@@ -48,16 +47,24 @@ def worker():
         runner = MetaGenomeForPhenotypeInfer(**args_dict)
         pan_metrics, multi_metrics = runner.inference()
 
+        if pan_metrics is None or multi_metrics is None:
+            continue
+
+        metric_splits.append(s)
         for i in range(len(pan_metrics)):
             result_df[list(result_df.keys())[i]].append(pan_metrics[i])
         for i in range(len(multi_metrics)):
             multi_result_df[list(multi_result_df.keys())[i]].append(multi_metrics[i])
 
-    result_df = pd.DataFrame(result_df, index=s_list)
+    if not metric_splits:
+        print('No labels found in any split. Only probability files were saved.')
+        return
+
+    result_df = pd.DataFrame(result_df, index=metric_splits)
     mean_row = result_df.mean(numeric_only=True)
     result_df.loc['mean'] = mean_row
     print(result_df)
-    multi_result_df = pd.DataFrame(multi_result_df, index=s_list)
+    multi_result_df = pd.DataFrame(multi_result_df, index=metric_splits)
     mean_row = multi_result_df.mean(numeric_only=True)
     multi_result_df.loc['mean'] = mean_row
     print(multi_result_df)

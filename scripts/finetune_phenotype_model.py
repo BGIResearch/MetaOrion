@@ -25,6 +25,7 @@ def register_params():
     parser.add_argument('--output_home', type=str, help='output home')
     parser.add_argument('--decay_gamma', type=float, help='multiplicative factor of learning rate decay')
     parser.add_argument('--decay_step', type=int, help='period of learning rate decay')
+    parser.add_argument('--patience', type=int, default=40, help='early stopping patience')
 
     return parser.parse_args()
 
