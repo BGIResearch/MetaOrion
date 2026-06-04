@@ -292,22 +292,21 @@ if __name__ == '__main__':
 
     # 1. Extract PanDisease biomarkers
     pandisease_results = extract_pandisease_biomarkers(WEIGHT_BASE_PATH)
-    top_pandisease_taxa = sorted(pandisease_results['mean_weights'].items(), key=lambda x: x[1], reverse=True)
+    pandisease_taxa = sorted(pandisease_results['mean_weights'].items(), key=lambda x: x[1], reverse=True)
 
     # Save to TXT
-    # os.makedirs(os.path.dirname(OUT_TXT_PATH), exist_ok=True)
-    # with open(OUT_TXT_PATH, 'w') as f:
-    #     for taxa, weight in top_pandisease_taxa:
-    #         f.write(f"{taxa}\t{weight}\n")
-    # print(f">>> PanDisease biomarkers saved to: {OUT_TXT_PATH}")
+    os.makedirs(os.path.dirname(OUT_TXT_PATH), exist_ok=True)
+    with open(OUT_TXT_PATH, 'w') as f:
+        for taxa, weight in pandisease_taxa:
+            f.write(f"{taxa}\t{weight}\n")
+    print(f">>> PanDisease biomarkers saved to: {OUT_TXT_PATH}")
 
     # 2. Extract Disease-Specific biomarkers using JSON classifications
     disease_specific_results = extract_disease_specific_biomarkers(METADATA_BASE_PATH, WEIGHT_BASE_PATH)
 
     # 3. Plot specific diseases (Adenoma, CRC, IBD, IBS)
-    # plot_top30_taxa_boxplots_custom(
-    #     merged_result=disease_specific_results,
-    #     target_diseases=['adenoma', 'CRC', 'IBD', 'IBS'],
-    #     save_path=OUT_PDF_PATH
-    # )
-    pass
+    plot_top30_taxa_boxplots_custom(
+        merged_result=disease_specific_results,
+        target_diseases=['adenoma', 'CRC', 'IBD', 'IBS'],
+        save_path=OUT_PDF_PATH
+    )
