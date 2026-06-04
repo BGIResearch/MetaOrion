@@ -36,7 +36,7 @@ def worker():
 
     result_df = {'precision': [], 'recall': [], 'F1': [], 'acc': [], 'AUC': [], 'AUPR': [], 'MCC': []}
     multi_result_df = {'precision': [], 'recall': [], 'F1': [], 'acc': [], 'MCC': []}
-    s_list=[]
+    s_list = []
     for s in ['split' + str(i) for i in range(1, 6)]:
         s_list.append(s)
         print(s)

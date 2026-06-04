@@ -16,7 +16,6 @@ class MetaGenomeSEQInference(Kernel):
         super().__init__(**kwargs)
         self.dataloader = self.register_dataloader(is_inference=True)
         self.model = MeatGenomeForSEQEmbeddingModelWithGraphForAbundance.from_pretrained(
-            # MeatGenomeForSEQEmbeddingModelWithGraph
             pretrained_model_name_or_path=self.model_name_or_path
         )
 
@@ -87,8 +86,6 @@ class MetaGenomeSEQInference(Kernel):
         np.save(os.path.join(self.output_home + 'sample.attn.sim.npy'), s_attn_sim)
         np.save(os.path.join(self.output_home + 'seq.len.npy'), seq_len)
 
-    def train(self, **kwargs):
-        pass
 
     def bray_curtis_distance(self, x: torch.Tensor, y: torch.Tensor, attn_mask: torch.Tensor) -> torch.Tensor:
         masked_x = x * attn_mask

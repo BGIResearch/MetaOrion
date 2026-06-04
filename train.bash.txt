@@ -6,7 +6,6 @@ conda activate /bgi-seq-model-2/codes/wangshengfu/00_envs/metagenome
 
 
 #export COMET_API_KEY="Jg07yXkfdREMDeK1GEXiQCPJY"
-# 选择 GPU 实例规格时，通过环境变量配置每个实例上的训练进程数量与 GPU 数量一致
 CUDA_VISIBLE_DEVICES=0
 
 accelerate launch \

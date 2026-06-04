@@ -1,6 +1,6 @@
 # MetaOrion
 
-MetaOrion is a deep learning framework designed for analyzing microbiome data to predict disease phenotypes. It processes tabular profile data into instance-level representations and utilizes a transformer architecture for efficient evaluation and fine-tuning.
+MetaOrion is a species-level, abundance-aware representation learning framework designed for personalized metagenomics. Built on a customized causal transformer architecture, it is pretrained on a harmonized collection of over 100,000 human metagenomes to capture transferable ecological priors, and subsequently fine-tuned for disease prediction. Beyond classification, MetaOrion identifies critical condition-specific biomarkers and leverages its learned embeddings to reconstruct individualized microbial interaction networks directly from single-sample taxonomic profiles. Based on these networks, the framework derives a Microbial Dysbiosis Index (MDI) to precisely quantify structural ecological shifts. Ultimately, MetaOrion provides a unified framework for understanding microbiome organization across health and disease.
 
 
 

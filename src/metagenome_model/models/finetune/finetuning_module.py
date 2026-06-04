@@ -146,6 +146,5 @@ class LinearHeader(Header):
         return HeaderOutput(
             logits=disease_logits,
             state_logits=state_logits,
-            emb=head_input,
-            fusion_emb=fusion_emb
+            emb=head_input
         )

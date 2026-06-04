@@ -77,27 +77,23 @@ class MetaGenomeForPhenotypeInfer(Kernel):
                     taxa_emb = output.taxa_emb[sample_id][:seq_len[sample_id].item()].cpu().numpy()
                     taxa = sample['batch_seq'][sample_id].split(' ')
                     bin_abu = sample['bin_abundance'][sample_id][:seq_len[sample_id].item()].cpu().numpy()
-                    # os.makedirs(os.path.join(self.output_home, 'emb'), exist_ok=True)
-                    # with open(os.path.join(self.output_home, 'emb', sample['batch_filenames'][sample_id].split('.json')[0]+'.pkl'), 'wb') as fp:
-                    #     pickle.dump({
-                    #         'taxa': taxa,
-                    #         'embedding': taxa_emb,
-                    #         'binned_abundance': bin_abu,
-                    #         # 'sample_embedding': output.sample_emb[sample_id].cpu().numpy(),
-                    #         'finetune_embedding': output.fusion_emb1[sample_id].cpu().numpy(), # For visualization.
-                    #         # 'fusion_embedding': output.fusion_emb[sample_id].cpu().numpy(),
-                    #         'label': pan_label2id[sample['batch_label'].cpu()[sample_id].item()]
-                    #     }, fp)
+                    os.makedirs(os.path.join(self.output_home, 'emb'), exist_ok=True)
+                    with open(os.path.join(self.output_home, 'emb', sample['batch_filenames'][sample_id].split('.json')[0]+'.pkl'), 'wb') as fp:
+                        pickle.dump({
+                            'taxa': taxa,
+                            'embedding': taxa_emb,
+                            'binned_abundance': bin_abu,
+                            'finetune_embedding': output.fusion_emb[sample_id].cpu().numpy(), # For visualization.
+                            'label': pan_label2id[sample['batch_label'].cpu()[sample_id].item()]
+                        }, fp)
 
                 pred = output.logits.softmax(dim=-1).argmax(dim=-1)
                 state_pred = (output.state_logits.flatten().sigmoid() >= 0.5).long()
-                # pred = (output.logits.flatten().sigmoid() >= 0.5).long()
 
                 all_pred.append(self.accelerator.gather_for_metrics(pred).detach().cpu())
                 all_label.append(self.accelerator.gather_for_metrics(sample['batch_label']).detach().cpu())
                 all_logit.append(self.accelerator.gather_for_metrics(output.logits).detach().cpu())
-                # all_logit.append(self.accelerator.gather_for_metrics(output.logits.flatten()).detach().cpu())
-                #
+
                 all_state_label.append(self.accelerator.gather_for_metrics(sample['batch_state']).detach().cpu())
                 all_state_pred.append(self.accelerator.gather_for_metrics(state_pred).detach().cpu())
                 all_state_logit.append(
@@ -111,13 +107,11 @@ class MetaGenomeForPhenotypeInfer(Kernel):
             preds = torch.cat(all_pred)
             labels = torch.cat(all_label)
             logits = torch.cat(all_logit)
-            # proba = logits.sigmoid().numpy()
             proba = logits.softmax(dim=-1).numpy()
 
             state_preds = torch.cat(all_state_pred)
             state_labels = torch.cat(all_state_label)
             state_logits = torch.cat(all_state_logit)
-            # state_proba = state_logits.softmatx(dim=-1).numpy()
             state_proba = state_logits.sigmoid().numpy()
 
             name = [j.split('.json')[0] for i in all_filenames for j in i][:len(state_preds)]

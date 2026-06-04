@@ -43,6 +43,5 @@ class MetaGenomeForPhenotype(nn.Module):
             taxa_emb=encoder_output.fusion_emb,
             domain_logits=header_output.domain_logits,
             sample_emb=encoder_output.sample_emb,
-            fusion_emb1=header_output.emb,
-            fusion_emb=header_output.fusion_emb
+            fusion_emb=header_output.emb,
         )

@@ -12,9 +12,8 @@ import torch.nn.functional as F
 from tqdm import tqdm
 
 
-from src.metagenome_model.basic.utils import EMA, GHMC_Loss
+from src.metagenome_model.basic.utils import EMA, GHMC_Loss, get_loss_weights
 from src.metagenome_model.basic.kernel import Kernel
-# from Meta_Index.MetaIndex.metagenome.basic.losses import contrastive_loss
 from src.metagenome_model.basic.metagenome_dataset import MetaGenomeSortSEQLengthForFinetuneDataset
 from src.metagenome_model.models.finetune.finetuning_model import MetaGenomeForPhenotype
 
@@ -40,12 +39,7 @@ class MetaGenomeForPhenotypeTrainer(Kernel):
             # self.accelerator.print(self.model)
             self.print_trainable_parameters()
 
-    def get_loss_weights(self, label_info):
-        class_counts = np.array(list(label_info.values()))
-        # Inverse
-        class_weights = [1.0 / c for c in class_counts]
-        weight_norm = class_weights / np.sum(class_weights) * len(class_counts)
-        return weight_norm
+
 
     def train(self, **kwargs):
         self.prepare()
@@ -55,8 +49,7 @@ class MetaGenomeForPhenotypeTrainer(Kernel):
         best_score = [-np.Inf, np.Inf]
         patience = 40
         patience_counter = 0
-        counts = [1990, 961, 930, 374, 296, 290, 282, 277, 265, 231, 214, 206, 177, 159, 127]
-        multi_weights = self.get_loss_weights(label_info={idx: count for idx, count in enumerate(counts)})
+        multi_weights = torch.tensor(get_loss_weights(), device=self.accelerator.device, dtype=torch.float32)
         stop_training = torch.tensor(0).to(self.accelerator.device)
 
         for eph in range(self.max_epochs):
@@ -81,9 +74,7 @@ class MetaGenomeForPhenotypeTrainer(Kernel):
                         filtered_labels = sample['batch_label'][mask]
 
                         cls_loss = F.cross_entropy(filtered_logits, filtered_labels - 1
-                                                   , weight=torch.tensor(multi_weights, device=output.logits.device,
-                                                                         dtype=torch.float32)
-                                                   )
+                                                   , weight=multi_weights)
                         state_ghmloss = ghmloss(output.state_logits, sample['batch_state'].float())
                         loss = state_ghmloss + cls_loss
 
@@ -145,10 +136,6 @@ class MetaGenomeForPhenotypeTrainer(Kernel):
                 if self.accelerator.is_main_process:
                     pan_acc = torch.mean(torch.hstack(Panacc_list)).item()
                     acc = torch.mean(torch.hstack(acc_list)).item()
-                    # val_loss = torch.mean(torch.hstack(val_loss_list)).item()
-
-                    # pan_acc = val_acc.item()
-                    # acc = val_acc.item()
 
                     print({'EPH': f'{eph + 1:03d}', 'Val Pan-Acc': f'{pan_acc:.5f}',
                            'Val Acc': f'{acc:.5f}'})

@@ -36,20 +36,15 @@ class MetaGenomeModelOutput(ModelOutput):
     abundance: torch.FloatTensor = None
     attn_weight: torch.FloatTensor = None
 
-MetaGenome_ATTN_CLASS = {
-    'llama_attn': LlamaAttention,
-}
-
 
 # copied from transformers.modules.modules.modeling_llama.LlamaDecoderLayer
 class MetaGenomeLayer(nn.Module):
     def __init__(self, config, layer_idx):
         super().__init__()
         self.hidden_size = config.hidden_size
-        self.self_attn = MetaGenome_ATTN_CLASS[config.attn_type](config=config, layer_idx=layer_idx)
+        self.self_attn = LlamaAttention(config=config, layer_idx=layer_idx)
         self.self_attn.is_causal = config.is_causal
         self.mlp = LlamaMLP(config)
-        # self.mlp = MetaGenomeMoE(config)
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 

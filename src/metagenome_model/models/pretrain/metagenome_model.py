@@ -106,8 +106,6 @@ class MeatGenomeForSEQEmbeddingModelWithGraphForAbundance(MetaGenomePreTrainedMo
         super().__init__(config)
         self.model = MeatGenomeForSEQEmbeddingModelWithGraph(config)
 
-        # self.token2ids_header = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
-
         self.token2abu_header = nn.Sequential(
             nn.Linear(config.hidden_size, config.hidden_size, bias=False),
             nn.LeakyReLU(),
@@ -124,9 +122,6 @@ class MeatGenomeForSEQEmbeddingModelWithGraphForAbundance(MetaGenomePreTrainedMo
         """Return token-level and sample-level abundance logits."""
         encoder_output = self.model(input_ids, attention_mask, padding_mask, abundance)
 
-        # Historical token id head. It is not used in the current flow.
-        # ids_logits = self.token2ids_header(encoder_output.last_hidden_state)
-
         # Token-level abundance prediction.
         token_logits = self.token2abu_header(encoder_output.fusion_emb).squeeze(2)
 
@@ -137,7 +132,6 @@ class MeatGenomeForSEQEmbeddingModelWithGraphForAbundance(MetaGenomePreTrainedMo
         return MetaGenomeModelOutput(
             token_logits=token_logits,
             sample_logits=sample_logits,
-            # ids_logits=ids_logits,
             fusion_emb=encoder_output.fusion_emb,
             sample_emb=encoder_output.sample_emb,
             attn_weight=encoder_output.attn_weight

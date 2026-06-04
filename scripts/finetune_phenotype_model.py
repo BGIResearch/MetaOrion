@@ -34,7 +34,6 @@ if __name__ == '__main__':
     args_dict = vars(args)
 
     output_home = vars(args)['output_home']
-    model_name_or_path = vars(args)['model_name_or_path']
 
     disease = 'pandisease'
     for s in ['split' + str(i)+'.change' for i in range(1, 6)]:

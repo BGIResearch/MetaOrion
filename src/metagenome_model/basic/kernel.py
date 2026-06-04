@@ -103,16 +103,6 @@ class Kernel:
         self.train_dataloader = self.accelerator.prepare_data_loader(self.train_dataloader)
         self.val_dataloader = self.accelerator.prepare_data_loader(self.val_dataloader)
 
-    @abstractmethod
-    def train(self, **kwargs):
-        """Training loop"""
-
-    def save_ckpt(self, ckpt_home, **kwargs):
-        """Save checkpoint"""
-        unwrapped_model = self.accelerator.unwrap_model(self.model)
-        unwrapped_model.save_pretrained(save_directory=ckpt_home, safe_serialization=False)
-        self.accelerator.save(self.optimizer.state_dict(), os.path.join(ckpt_home, 'optimizer.bin'))
-
     def print_trainable_parameters(self, model=None):
         total = 0
         trainable = 0

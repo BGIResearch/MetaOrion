@@ -1,15 +1,14 @@
 import torch
-import pandas as pd
+import numpy as np
 from torch import nn
 import torch.nn.functional as F
 
-from sklearn.metrics import roc_curve, roc_auc_score, confusion_matrix, matthews_corrcoef, classification_report
 
 class GHM_Loss(nn.Module):
     def __init__(self, bins=10, alpha=0.5):
         '''
         bins: split to n bins
-        alpha: hyper-parameter 常选0.75/0.9 batch小梯度波动大选0.9
+        alpha: hyper-parameter 0.75/0.9
         '''
         super(GHM_Loss, self).__init__()
         self._bins = bins
@@ -103,3 +102,12 @@ class EMA:
             if param.requires_grad:
                 param.data = self.backup[name]
         self.backup = {}
+
+def get_loss_weights():
+    counts = [1990, 961, 930, 374, 296, 290, 282, 277, 265, 231, 214, 206, 177, 159, 127]
+    label_info = {idx: count for idx, count in enumerate(counts)}
+    class_counts = np.array(list(label_info.values()))
+    # Inverse
+    class_weights = [1.0 / c for c in class_counts]
+    weight_norm = class_weights / np.sum(class_weights) * len(class_counts)
+    return weight_norm

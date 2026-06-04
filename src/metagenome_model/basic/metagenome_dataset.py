@@ -76,7 +76,6 @@ class MetaGenomeSEQDataset(Dataset):
             'idx': ix,
             'filename': name,
             'label': data['label'] if 'label' in data.keys() and data['label'] is not None else -1,
-            # 'label': 1 if data['disease_united'] == 'CRC' else 0,
             'mask': mask_flag
         }
 
