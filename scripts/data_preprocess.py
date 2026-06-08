@@ -119,10 +119,10 @@ def main():
             # Safely check if sample_id exists in metadata and Group column exists
             if sample_id in phe_df.index and "Group" in phe_df.columns:
                 study_condition = phe_df.loc[sample_id, "Group"]
-                sample_data['label'] = standardize_disease_name(study_condition)
+                sample_data['disease_united'] = standardize_disease_name(study_condition)
             else:
                 # Fallback if sample is missing from metadata but metadata was provided
-                sample_data['label'] = 'others'
+                sample_data['disease_united'] = 'others'
 
                 # Save to JSON
         json_path = os.path.join(save_dir, f"{sample_id}.json")

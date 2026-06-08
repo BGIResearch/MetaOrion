@@ -76,15 +76,15 @@ class MetaOrionPhenotypeInfer(Kernel):
                     taxa_emb = output.taxa_emb[sample_id][:seq_len[sample_id].item()].cpu().numpy()
                     taxa = sample['batch_seq'][sample_id].split(' ')
                     bin_abu = sample['bin_abundance'][sample_id][:seq_len[sample_id].item()].cpu().numpy()
-                    os.makedirs(os.path.join(self.output_home, 'emb'), exist_ok=True)
-                    with open(os.path.join(self.output_home, 'emb', sample['batch_filenames'][sample_id].split('.json')[0]+'.pkl'), 'wb') as fp:
-                        pickle.dump({
-                            'taxa': taxa,
-                            'embedding': taxa_emb,
-                            'binned_abundance': bin_abu,
-                            'finetune_embedding': output.fusion_emb[sample_id].cpu().numpy(), # For visualization.
-                            'label': label_name,
-                        }, fp)
+                    # os.makedirs(os.path.join(self.output_home, 'emb'), exist_ok=True)
+                    # with open(os.path.join(self.output_home, 'emb', sample['batch_filenames'][sample_id].split('.json')[0]+'.pkl'), 'wb') as fp:
+                    #     pickle.dump({
+                    #         'taxa': taxa,
+                    #         'embedding': taxa_emb,
+                    #         'binned_abundance': bin_abu,
+                    #         'finetune_embedding': output.fusion_emb[sample_id].cpu().numpy(), # For visualization.
+                    #         'label': label_name,
+                    #     }, fp)
 
                 pred = output.logits.softmax(dim=-1).argmax(dim=-1)
                 state_pred = (output.state_logits.flatten().sigmoid() >= 0.5).long()
@@ -133,8 +133,8 @@ class MetaOrionPhenotypeInfer(Kernel):
             if has_labels:
                 multi_prob_df['label'] = labels.numpy()
 
-            pan_prob_df.to_csv(os.path.join(self.probs_path, 'pandisease.all.prob.csv'), index=False)
-            multi_prob_df.to_csv(os.path.join(self.probs_path, 'multidisease.all.prob.csv'))
+            # pan_prob_df.to_csv(os.path.join(self.probs_path, 'pandisease.all.prob.csv'), index=False)
+            # multi_prob_df.to_csv(os.path.join(self.probs_path, 'multidisease.all.prob.csv'))
 
             if not has_labels:
                 print('No labels found. Probability files were saved without metrics.')
@@ -149,7 +149,7 @@ class MetaOrionPhenotypeInfer(Kernel):
             result['auc'] = AUC
             result['aupr'] = AUPR
             result['MCC'] = MCC
-            result.round(4).to_csv(os.path.join(self.output_home, 'pandisease.all.result.csv'))
+            # result.round(4).to_csv(os.path.join(self.output_home, 'pandisease.all.result.csv'))
             print('pandisease metrics\n', result)
 
             MCC = matthews_corrcoef(labels.numpy(), final_preds)
@@ -157,7 +157,7 @@ class MetaOrionPhenotypeInfer(Kernel):
             multi_result = pd.DataFrame(report).transpose()
             multi_result['MCC'] = MCC
             multi_result.index = [{v: k for k, v in self.PAN_LABELS.items()}[int(i)] for i in multi_result.index[:-3]] + list(multi_result.index[-3:])
-            multi_result.round(4).to_csv(os.path.join(self.output_home, 'multidisease.all.result.csv'))
+            # multi_result.round(4).to_csv(os.path.join(self.output_home, 'multidisease.all.result.csv'))
             print('multidisease metrics\n', multi_result)
 
             return [result.loc['weighted avg', 'precision'], result.loc['weighted avg', 'recall'],
@@ -169,8 +169,3 @@ class MetaOrionPhenotypeInfer(Kernel):
                                                          multi_result.loc['weighted avg', 'f1-score'],
                                                          multi_result.loc['accuracy', 'support'],
                                                          multi_result.loc['weighted avg', 'MCC']]
-
-        return None, None
-
-    def train(self, **kwargs):
-        pass
