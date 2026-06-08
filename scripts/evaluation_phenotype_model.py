@@ -4,7 +4,7 @@ import os
 import pandas as pd
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.metagenome_model.inference.finetuning_evaluation import MetaOrionPhenotypeInfer
+from src.metaorion.inference.phenotype_inference import MetaOrionPhenotypeInfer
 
 
 def register_params():

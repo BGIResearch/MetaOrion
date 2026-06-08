@@ -5,7 +5,7 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.metagenome_model.inference.pretrainning_evaluation import MetaGenomeSEQInference
+from src.metaorion.inference.sequence_inference import MetaOrionSequenceInfer
 
 
 def register_params():
@@ -28,7 +28,7 @@ def register_params():
 def worker():
     args = register_params()
 
-    runner = MetaGenomeSEQInference(**vars(args))
+    runner = MetaOrionSequenceInfer(**vars(args))
     runner.inference()
 
 

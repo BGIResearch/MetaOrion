@@ -12,7 +12,7 @@ from typing import Dict, Union, List
 from transformers import PreTrainedTokenizer
 
 
-class MetaGenomeTokenizer(PreTrainedTokenizer):
+class MetaOrionTokenizer(PreTrainedTokenizer):
     def __init__(self, model_name_or_path, **kwargs):
         self.model = spm.SentencePieceProcessor()
         self.model.load(model_file=os.path.join(model_name_or_path, 'tokenizer.model'))

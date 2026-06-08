@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-# @Project : MetaIndex
-# @File    : finetuning_trainer.py
+# @Project : MetaOrion
+# @File    : phenotype_trainer.py
 # @Author  : zhangchao
 # @Date    : 2024/12/24 13:26
 # @Email   : zhangchao5@genomics.cn
@@ -12,10 +12,10 @@ import torch.nn.functional as F
 from tqdm import tqdm
 
 
-from src.metagenome_model.basic.utils import EMA, GHMC_Loss, get_loss_weights
-from src.metagenome_model.basic.kernel import Kernel
-from src.metagenome_model.basic.metagenome_dataset import MetaGenomeSortSEQLengthForFinetuneDataset
-from src.metagenome_model.models.finetune.finetuning_model import MetaOrionForPhenotype
+from src.metaorion.basic.utils import EMA, GHMC_Loss, get_loss_weights
+from src.metaorion.basic.kernel import Kernel
+from src.metaorion.basic.datasets import MetaOrionPhenotypeDataset
+from src.metaorion.models.finetune.modeling import MetaOrionForPhenotype
 
 BATCH_CHECKPOINT_STEP = 100
 
@@ -24,7 +24,7 @@ class MetaOrionPhenotypeTrainer(Kernel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.train_dataloader, self.val_dataloader = self.register_dataloader(
-            custom_dataset=MetaGenomeSortSEQLengthForFinetuneDataset)
+            custom_dataset=MetaOrionPhenotypeDataset)
 
         self.model = MetaOrionForPhenotype(
             model_name_or_path=self.model_name_or_path,

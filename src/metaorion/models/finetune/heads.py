@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 # @Project : MetaIndex
-# @File    : finetuning_module.py
+# @File    : heads.py
 # @Author  : zhangchao
 # @Date    : 2024/12/24 10:24
 # @Email   : zhangchao5@genomics.cn

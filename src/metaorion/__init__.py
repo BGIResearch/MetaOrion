@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-# @Project : metagenome
+# @Project : MetaOrion
 # @File    : statistics_length.py.py
 # @Author  : zhangchao
 # @Date    : 2024/7/12 18:25 

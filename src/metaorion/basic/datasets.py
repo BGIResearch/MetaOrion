@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-# @Project : metagenome
-# @File    : metagenome_dataset.py
+# @Project : MetaOrion
+# @File    : datasets.py
 # @Author  : zhangchao
 # @Date    : 2024/7/16 13:36 
 # @Email   : zhangchao5@genomics.cn
@@ -16,17 +16,17 @@ import numpy as np
 from torch.utils.data import Dataset
 from typing import List
 
-from src.metagenome_model.basic.tokenizer import MetaGenomeTokenizer
+from src.metaorion.basic.tokenizer import MetaOrionTokenizer
 
 
-class MetaGenomeSEQDataset(Dataset):
+class MetaOrionSequenceDataset(Dataset):
     data_path: List[str] | str
     model_name_or_path: str
     nodes: List
 
     def __init__(self, **kwargs):
         self.__dict__.update(**kwargs)
-        self.tokenizer = MetaGenomeTokenizer(model_name_or_path=self.model_name_or_path)
+        self.tokenizer = MetaOrionTokenizer(model_name_or_path=self.model_name_or_path)
         self.PAN_LABELS = {
             'healthy': 0,
             'IBD': 1,
@@ -154,7 +154,7 @@ class MetaGenomeSEQDataset(Dataset):
         return digits
 
 
-class MetaGenomeSortSEQLengthDataset(MetaGenomeSEQDataset):
+class MetaOrionSortedSequenceDataset(MetaOrionSequenceDataset):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         data_paths = kwargs.get('data_path')
@@ -169,7 +169,7 @@ class MetaGenomeSortSEQLengthDataset(MetaGenomeSEQDataset):
         return len(self.data_path)
 
 
-class MetaGenomeSortSEQLengthForFinetuneDataset(MetaGenomeSortSEQLengthDataset):
+class MetaOrionPhenotypeDataset(MetaOrionSortedSequenceDataset):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

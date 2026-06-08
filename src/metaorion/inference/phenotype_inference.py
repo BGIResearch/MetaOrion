@@ -5,15 +5,15 @@ import pandas as pd
 import torch
 from sklearn.metrics import auc, classification_report, matthews_corrcoef, precision_recall_curve, roc_auc_score
 
-from src.metagenome_model.basic.kernel import Kernel
-from src.metagenome_model.basic.metagenome_dataset import MetaGenomeSortSEQLengthForFinetuneDataset
-from src.metagenome_model.models.finetune.finetuning_model import MetaOrionForPhenotype
+from src.metaorion.basic.kernel import Kernel
+from src.metaorion.basic.datasets import MetaOrionPhenotypeDataset
+from src.metaorion.models.finetune.modeling import MetaOrionForPhenotype
 
 
 class MetaOrionPhenotypeInfer(Kernel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.dataloader = self.register_dataloader(custom_dataset=MetaGenomeSortSEQLengthForFinetuneDataset,
+        self.dataloader = self.register_dataloader(custom_dataset=MetaOrionPhenotypeDataset,
                                                    is_inference=True)
         self.model = MetaOrionForPhenotype(model_name_or_path=self.model_name_or_path, dropout_rate=self.dropout_rate,
                                            is_inference=True)

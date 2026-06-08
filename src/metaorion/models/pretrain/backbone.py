@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 # @Project : MetaIndex 
-# @File    : metagenome_module.py
+# @File    : backbone.py
 # @Author  : zhangchao
 # @Date    : 2024/12/23 13:54 
 # @Email   : zhangchao5@genomics.cn
@@ -19,7 +19,7 @@ from transformers.modeling_outputs import BaseModelOutputWithPast
 from transformers.models.llama.modeling_llama import LlamaAttention, LlamaMLP, LlamaRMSNorm
 from transformers.utils import ModelOutput
 
-from src.metagenome_model.config.configuration_model import MetaOrionConfig
+from src.metaorion.config.configuration import MetaOrionConfig
 
 
 @dataclass

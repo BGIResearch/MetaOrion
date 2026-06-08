@@ -1,7 +1,7 @@
 import torch.nn as nn
 
-from src.metagenome_model.models.finetune.finetuning_module import MetaOrionPhenotypeHead, MetaOrionPhenotypeOutput
-from src.metagenome_model.models.pretrain.metagenome_model import MetaOrionEncoder
+from src.metaorion.models.finetune.heads import MetaOrionPhenotypeHead, MetaOrionPhenotypeOutput
+from src.metaorion.models.pretrain.modeling import MetaOrionEncoder
 
 
 class MetaOrionForPhenotype(nn.Module):

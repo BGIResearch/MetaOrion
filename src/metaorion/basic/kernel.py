@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-# @Project : metagenome
+# @Project : MetaOrion
 # @File    : basic.py
 # @Author  : zhangchao
 # @Date    : 2024/12/23 9:40 
@@ -18,7 +18,7 @@ from accelerate import DistributedDataParallelKwargs, InitProcessGroupKwargs, Ac
 from torch.utils.data import DataLoader
 from transformers import set_seed, PreTrainedModel
 
-from src.metagenome_model.basic.metagenome_dataset import MetaGenomeSortSEQLengthDataset
+from src.metaorion.basic.datasets import MetaOrionSortedSequenceDataset
 
 
 class Kernel:
@@ -53,7 +53,7 @@ class Kernel:
         self.configure_ddp()
         self.register_dir(self.output_home)
 
-    def register_dataloader(self, custom_dataset=MetaGenomeSortSEQLengthDataset, *, num_workers=0, drop_last=False,
+    def register_dataloader(self, custom_dataset=MetaOrionSortedSequenceDataset, *, num_workers=0, drop_last=False,
                             is_inference=False):
         if is_inference:
             val_dataset = custom_dataset(data_path=self.val_data_path, model_name_or_path=self.model_name_or_path,

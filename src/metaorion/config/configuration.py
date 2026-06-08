@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-# @Project : metagenome
-# @File    : configuration_model.py
+# @Project : MetaOrion
+# @File    : configuration.py
 # @Author  : zhangchao
 # @Date    : 2024/10/23 16:02 
 # @Email   : zhangchao5@genomics.cn

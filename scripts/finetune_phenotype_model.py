@@ -3,7 +3,7 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.metagenome_model.train.finetuning_trainer import MetaOrionPhenotypeTrainer
+from src.metaorion.train.phenotype_trainer import MetaOrionPhenotypeTrainer
 
 
 def register_params():

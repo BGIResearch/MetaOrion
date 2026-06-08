@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
-# @Project : metagenome
-# @File    : metagenome_model.py
+# @Project : MetaOrion
+# @File    : modeling.py
 # @Author  : zhangchao
 # @Date    : 2024/10/23 11:09 
 # @Email   : zhangchao5@genomics.cn
@@ -12,8 +12,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from transformers.models.llama.modeling_llama import LlamaRMSNorm
 
-from src.metagenome_model.config.configuration_model import MetaOrionConfig
-from src.metagenome_model.models.pretrain.metagenome_module import (
+from src.metaorion.config.configuration import MetaOrionConfig
+from src.metaorion.models.pretrain.backbone import (
     MetaOrionBackbone,
     MetaOrionModelOutput,
     MetaOrionPreTrainedModel,
@@ -142,5 +142,4 @@ class MetaOrionAbundanceHead(MetaOrionPreTrainedModel):
             sample_emb=encoder_output.sample_emb,
             attn_weight=encoder_output.attn_weight
         )
-
 
