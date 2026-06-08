@@ -10,7 +10,7 @@ from transformers import PretrainedConfig
 
 # copied from transformers.modules.configuration_llama.LlamaConfig
 class MetaOrionConfig(PretrainedConfig):
-    model_type = "metagenome"
+    model_type = "metaorion"
     keys_to_ignore_at_inference = ["past_key_values"]
 
     def __init__(
@@ -36,11 +36,12 @@ class MetaOrionConfig(PretrainedConfig):
             attention_bias=False,
             attention_dropout=0.0,
             is_causal=False,
-            recon_token=True,
-            n_experts=32,
-            n_activate_experts=6,
             **kwargs,
     ):
+        for deprecated_key in ("use_graph", "recon_token", "n_experts", "n_activate_experts"):
+            kwargs.pop(deprecated_key, None)
+        kwargs.pop("architectures", None)
+
         self.vocab_size = vocab_size
         self.max_position_embeddings = max_position_embeddings
         self.hidden_size = hidden_size
@@ -65,9 +66,6 @@ class MetaOrionConfig(PretrainedConfig):
         self.attention_dropout = attention_dropout
         self.attn_type = kwargs.get('attn_type', kwargs.get('attn_implementation', 'llama_attn'))
         self.is_causal = is_causal
-        self.recon_token = recon_token
-        self.n_experts = n_experts
-        self.n_activate_experts = n_activate_experts
 
         super().__init__(
             pad_token_id=pad_token_id,
