@@ -9,7 +9,7 @@ from transformers import PretrainedConfig
 
 
 # copied from transformers.modules.configuration_llama.LlamaConfig
-class MetaGenomeConfig(PretrainedConfig):
+class MetaOrionConfig(PretrainedConfig):
     model_type = "metagenome"
     keys_to_ignore_at_inference = ["past_key_values"]
 

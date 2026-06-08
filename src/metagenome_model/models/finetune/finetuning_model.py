@@ -1,11 +1,11 @@
 import torch.nn as nn
 
-from src.metagenome_model.models.finetune.finetuning_module import LinearHeader, MetaGenomePEFTModelOutput
-from src.metagenome_model.models.pretrain.metagenome_model import MeatGenomeForSEQEmbeddingModelWithGraph
+from src.metagenome_model.models.finetune.finetuning_module import MetaOrionPhenotypeHead, MetaOrionPhenotypeOutput
+from src.metagenome_model.models.pretrain.metagenome_model import MetaOrionEncoder
 
 
-class MetaGenomeForPhenotype(nn.Module):
-    """Phenotype prediction model built on the pretrained MetaGenome encoder."""
+class MetaOrionForPhenotype(nn.Module):
+    """Phenotype prediction model built on the pretrained MetaOrion encoder."""
 
     def __init__(
             self,
@@ -14,16 +14,18 @@ class MetaGenomeForPhenotype(nn.Module):
             is_inference=False,
     ):
         super().__init__()
-        self.model = MeatGenomeForSEQEmbeddingModelWithGraph.from_pretrained(
+        self.model = MetaOrionEncoder.from_pretrained(
             pretrained_model_name_or_path=model_name_or_path
             )
         if is_inference:
-            self.header = LinearHeader.from_pretrained(
+            self.header = MetaOrionPhenotypeHead.from_pretrained(
                 model_name_or_path, input_dims=self.model.config.hidden_size, output_dims=15,
                 dropout_rate=dropout_rate
             )
         else:
-            self.header = LinearHeader(input_dims=self.model.config.hidden_size, output_dims=15, dropout_rate=dropout_rate)
+            self.header = MetaOrionPhenotypeHead(
+                input_dims=self.model.config.hidden_size, output_dims=15, dropout_rate=dropout_rate
+            )
 
     def forward(self, input_ids, attention_mask, padding_mask, abundance, age, gender):
         """Encode sample features and predict phenotype labels."""
@@ -37,7 +39,7 @@ class MetaGenomeForPhenotype(nn.Module):
             gender=gender
         )
 
-        return MetaGenomePEFTModelOutput(
+        return MetaOrionPhenotypeOutput(
             logits=header_output.logits,
             state_logits=header_output.state_logits,
             taxa_emb=encoder_output.fusion_emb,

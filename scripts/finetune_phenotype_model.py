@@ -3,7 +3,7 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.metagenome_model.train.finetuning_trainer import MetaGenomeForPhenotypeTrainer
+from src.metagenome_model.train.finetuning_trainer import MetaOrionPhenotypeTrainer
 
 
 def register_params():
@@ -44,6 +44,6 @@ if __name__ == '__main__':
 
         args_dict['output_home'] = os.path.join(output_home, s)
 
-        runner = MetaGenomeForPhenotypeTrainer(**args_dict)
+        runner = MetaOrionPhenotypeTrainer(**args_dict)
         runner.train()
         print(f'{s} model is finished training!')

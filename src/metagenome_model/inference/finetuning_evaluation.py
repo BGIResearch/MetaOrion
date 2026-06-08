@@ -7,16 +7,16 @@ from sklearn.metrics import auc, classification_report, matthews_corrcoef, preci
 
 from src.metagenome_model.basic.kernel import Kernel
 from src.metagenome_model.basic.metagenome_dataset import MetaGenomeSortSEQLengthForFinetuneDataset
-from src.metagenome_model.models.finetune.finetuning_model import MetaGenomeForPhenotype
+from src.metagenome_model.models.finetune.finetuning_model import MetaOrionForPhenotype
 
 
-class MetaGenomeForPhenotypeInfer(Kernel):
+class MetaOrionPhenotypeInfer(Kernel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.dataloader = self.register_dataloader(custom_dataset=MetaGenomeSortSEQLengthForFinetuneDataset,
                                                    is_inference=True)
-        self.model = MetaGenomeForPhenotype(model_name_or_path=self.model_name_or_path, dropout_rate=self.dropout_rate,
-                                            is_inference=True)
+        self.model = MetaOrionForPhenotype(model_name_or_path=self.model_name_or_path, dropout_rate=self.dropout_rate,
+                                           is_inference=True)
         self.figs_path = self.register_dir(os.path.join(self.output_home, 'figs'))
         self.probs_path = self.register_dir(os.path.join(self.output_home, 'probs'))
         self.PAN_LABELS = {

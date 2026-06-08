@@ -8,14 +8,14 @@ import numpy as np
 from tqdm import tqdm
 
 from src.metagenome_model.basic.kernel import Kernel
-from src.metagenome_model.models.pretrain.metagenome_model import MeatGenomeForSEQEmbeddingModelWithGraphForAbundance
+from src.metagenome_model.models.pretrain.metagenome_model import MetaOrionAbundanceHead
 
 
 class MetaGenomeSEQInference(Kernel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.dataloader = self.register_dataloader(is_inference=True)
-        self.model = MeatGenomeForSEQEmbeddingModelWithGraphForAbundance.from_pretrained(
+        self.model = MetaOrionAbundanceHead.from_pretrained(
             pretrained_model_name_or_path=self.model_name_or_path
         )
 

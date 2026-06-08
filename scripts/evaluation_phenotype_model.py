@@ -4,7 +4,7 @@ import os
 import pandas as pd
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.metagenome_model.inference.finetuning_evaluation import MetaGenomeForPhenotypeInfer
+from src.metagenome_model.inference.finetuning_evaluation import MetaOrionPhenotypeInfer
 
 
 def register_params():
@@ -44,7 +44,7 @@ def worker():
         args_dict['model_name_or_path'] = os.path.join(model_name_or_path, s, 'best_ckpt/')
         args_dict['output_home'] = os.path.join(output_home, s, 'best_ckpt/result/')
 
-        runner = MetaGenomeForPhenotypeInfer(**args_dict)
+        runner = MetaOrionPhenotypeInfer(**args_dict)
         pan_metrics, multi_metrics = runner.inference()
 
         if pan_metrics is None or multi_metrics is None:

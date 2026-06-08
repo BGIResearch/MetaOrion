@@ -15,7 +15,7 @@ from transformers.utils import ModelOutput
 
 
 @dataclass
-class MetaGenomePEFTModelOutput(ModelOutput):
+class MetaOrionPhenotypeOutput(ModelOutput):
     last_hidden_state: torch.FloatTensor = None
     logits: torch.FloatTensor = None
     state_logits: torch.FloatTensor = None
@@ -30,7 +30,7 @@ class MetaGenomePEFTModelOutput(ModelOutput):
 
 
 @dataclass
-class HeaderOutput(ModelOutput):
+class MetaOrionHeadOutput(ModelOutput):
     logits: torch.FloatTensor = None
     domain_logits: torch.FloatTensor | None = None
     state_logits: torch.FloatTensor | None = None
@@ -39,7 +39,7 @@ class HeaderOutput(ModelOutput):
     emb: torch.Tensor | None = None
 
 
-class Header(nn.Module):
+class MetaOrionHeadBase(nn.Module):
     """Base class for phenotype prediction heads."""
 
     def __init__(self, **kwargs):
@@ -86,7 +86,7 @@ class Header(nn.Module):
         return model
 
 
-class LinearHeader(Header):
+class MetaOrionPhenotypeHead(MetaOrionHeadBase):
     """Use sample, age, and gender embeddings for phenotype prediction."""
 
     def __init__(self, input_dims, output_dims, dropout_rate):
@@ -143,7 +143,7 @@ class LinearHeader(Header):
         for ly in self.net:
             disease_logits = ly(disease_logits)
 
-        return HeaderOutput(
+        return MetaOrionHeadOutput(
             logits=disease_logits,
             state_logits=state_logits,
             emb=head_input

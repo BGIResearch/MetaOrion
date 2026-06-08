@@ -15,18 +15,18 @@ from tqdm import tqdm
 from src.metagenome_model.basic.utils import EMA, GHMC_Loss, get_loss_weights
 from src.metagenome_model.basic.kernel import Kernel
 from src.metagenome_model.basic.metagenome_dataset import MetaGenomeSortSEQLengthForFinetuneDataset
-from src.metagenome_model.models.finetune.finetuning_model import MetaGenomeForPhenotype
+from src.metagenome_model.models.finetune.finetuning_model import MetaOrionForPhenotype
 
 BATCH_CHECKPOINT_STEP = 100
 
 
-class MetaGenomeForPhenotypeTrainer(Kernel):
+class MetaOrionPhenotypeTrainer(Kernel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.train_dataloader, self.val_dataloader = self.register_dataloader(
             custom_dataset=MetaGenomeSortSEQLengthForFinetuneDataset)
 
-        self.model = MetaGenomeForPhenotype(
+        self.model = MetaOrionForPhenotype(
             model_name_or_path=self.model_name_or_path,
             dropout_rate=self.dropout_rate,
         )

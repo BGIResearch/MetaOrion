@@ -19,11 +19,11 @@ from transformers.modeling_outputs import BaseModelOutputWithPast
 from transformers.models.llama.modeling_llama import LlamaAttention, LlamaMLP, LlamaRMSNorm
 from transformers.utils import ModelOutput
 
-from src.metagenome_model.config.configuration_model import MetaGenomeConfig
+from src.metagenome_model.config.configuration_model import MetaOrionConfig
 
 
 @dataclass
-class MetaGenomeModelOutput(ModelOutput):
+class MetaOrionModelOutput(ModelOutput):
     sample_logits: torch.FloatTensor = None
     token_logits: torch.FloatTensor = None
     ids_logits: torch.FloatTensor = None
@@ -38,7 +38,7 @@ class MetaGenomeModelOutput(ModelOutput):
 
 
 # copied from transformers.modules.modules.modeling_llama.LlamaDecoderLayer
-class MetaGenomeLayer(nn.Module):
+class MetaOrionLayer(nn.Module):
     def __init__(self, config, layer_idx):
         super().__init__()
         self.hidden_size = config.hidden_size
@@ -94,11 +94,12 @@ class MetaGenomeLayer(nn.Module):
 
 
 # copied from transformers.modules.modules.modeling_llama.LlamaPreTrainedModel
-class MetaGenomePreTrainedModel(PreTrainedModel):
-    config_class = MetaGenomeConfig
+class MetaOrionPreTrainedModel(PreTrainedModel):
+    config_class = MetaOrionConfig
     base_model_prefix = "modules"
+    keep_model_prefix = False
     supports_gradient_checkpointing = True
-    _no_split_modules = ["MetaGenomeLayer"]
+    _no_split_modules = ["MetaOrionLayer"]
     _skip_keys_device_placement = ["past_key_values"]
     _supports_flash_attn_2 = True
     _supports_sdpa = True
@@ -139,10 +140,10 @@ class MetaGenomePreTrainedModel(PreTrainedModel):
         MODEL_WEIGHT_NAME = 'pytorch_model.bin'
         ckpt = torch.load(os.path.join(pretrained_model_name_or_path, MODEL_WEIGHT_NAME), map_location='cpu')
 
-        config = MetaGenomeConfig.from_pretrained(pretrained_model_name_or_path)
+        config = MetaOrionConfig.from_pretrained(pretrained_model_name_or_path)
         model = cls(config, **kwargs)
-        if model.__class__.__name__ != 'MeatGenomeForSEQEmbeddingModelWithGraphForAbundance':
-            # remove `model.` prefix for each key
+        if not model.keep_model_prefix:
+            # Encoder checkpoints may be saved from a wrapper model.
             ckpt = {key[6:] if key.startswith('model.') else key: val for key, val in ckpt.items()}
         state_dict = model.state_dict()
 
@@ -174,8 +175,8 @@ class MetaGenomePreTrainedModel(PreTrainedModel):
 
 
 # copied from transformers.modules.modules.modeling_llama.LlamaModel
-class MetaGenomeModel(MetaGenomePreTrainedModel):
-    def __init__(self, config: MetaGenomeConfig):
+class MetaOrionBackbone(MetaOrionPreTrainedModel):
+    def __init__(self, config: MetaOrionConfig):
         super().__init__(config)
         self.attn_type = config.attn_type
         self.padding_idx = config.pad_token_id
@@ -183,7 +184,7 @@ class MetaGenomeModel(MetaGenomePreTrainedModel):
 
         self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
         self.layers = nn.ModuleList(
-            [MetaGenomeLayer(config, layer_idx) for layer_idx in range(config.num_hidden_layers)]
+            [MetaOrionLayer(config, layer_idx) for layer_idx in range(config.num_hidden_layers)]
         )
         self.norm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.gradient_checkpointing = False

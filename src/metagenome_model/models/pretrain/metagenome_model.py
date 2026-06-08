@@ -12,14 +12,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 from transformers.models.llama.modeling_llama import LlamaRMSNorm
 
-from src.metagenome_model.config.configuration_model import MetaGenomeConfig
-from src.metagenome_model.models.pretrain.metagenome_module import MetaGenomePreTrainedModel, MetaGenomeModelOutput, MetaGenomeModel
+from src.metagenome_model.config.configuration_model import MetaOrionConfig
+from src.metagenome_model.models.pretrain.metagenome_module import (
+    MetaOrionBackbone,
+    MetaOrionModelOutput,
+    MetaOrionPreTrainedModel,
+)
 
 
-class MeatGenomeForSEQEmbeddingModelWithGraph(MetaGenomePreTrainedModel):
+class MetaOrionEncoder(MetaOrionPreTrainedModel):
     """Encode taxa tokens and abundance values into token and sample embeddings."""
 
-    def __init__(self, config: MetaGenomeConfig, **kwargs):
+    def __init__(self, config: MetaOrionConfig, **kwargs):
         super().__init__(config)
         self.embed_abundances = nn.Sequential(
             nn.Linear(1, config.hidden_size),
@@ -29,12 +33,12 @@ class MeatGenomeForSEQEmbeddingModelWithGraph(MetaGenomePreTrainedModel):
             nn.Dropout(p=0.1)
         )
 
-        self.sequence_model = MetaGenomeModel(config)
+        self.sequence_model = MetaOrionBackbone(config)
         self.fusion = nn.Linear(config.hidden_size * 2, config.hidden_size)
         self.attn_pooling = AttentionPooling(config.hidden_size, config.hidden_size)
 
     def forward(self, input_ids, attention_mask, padding_mask, abundance):
-        """Run token embedding, abundance embedding, optional graph fusion, and sample pooling."""
+        """Run token embedding, abundance embedding, feature fusion, and sample pooling."""
         tokens_embed, abundance_embed, hidden_states = self._encode_sequence(
             input_ids=input_ids,
             attention_mask=attention_mask,
@@ -47,7 +51,7 @@ class MeatGenomeForSEQEmbeddingModelWithGraph(MetaGenomePreTrainedModel):
         )
         attn_weight, sample_emb = self.attn_pooling(fusion_emb, padding_mask)
 
-        return MetaGenomeModelOutput(
+        return MetaOrionModelOutput(
             fusion_emb=fusion_emb,
             sample_emb=sample_emb,
             token_emb=tokens_embed,
@@ -99,12 +103,14 @@ class AttentionPooling(nn.Module):
         return attn_weight.squeeze(-1), pooled_embeds
 
 
-class MeatGenomeForSEQEmbeddingModelWithGraphForAbundance(MetaGenomePreTrainedModel):
+class MetaOrionAbundanceHead(MetaOrionPreTrainedModel):
     """Predict abundance from token and sample embeddings."""
 
-    def __init__(self, config: MetaGenomeConfig, **kwargs):
+    keep_model_prefix = True
+
+    def __init__(self, config: MetaOrionConfig, **kwargs):
         super().__init__(config)
-        self.model = MeatGenomeForSEQEmbeddingModelWithGraph(config)
+        self.model = MetaOrionEncoder(config)
 
         self.token2abu_header = nn.Sequential(
             nn.Linear(config.hidden_size, config.hidden_size, bias=False),
@@ -129,13 +135,12 @@ class MeatGenomeForSEQEmbeddingModelWithGraphForAbundance(MetaGenomePreTrainedMo
         token_queries = self.token2query_header(encoder_output.token_emb)
         sample_logits = torch.bmm(token_queries, encoder_output.sample_emb[..., None]).squeeze(2)
 
-        return MetaGenomeModelOutput(
+        return MetaOrionModelOutput(
             token_logits=token_logits,
             sample_logits=sample_logits,
             fusion_emb=encoder_output.fusion_emb,
             sample_emb=encoder_output.sample_emb,
             attn_weight=encoder_output.attn_weight
         )
-
 
 
