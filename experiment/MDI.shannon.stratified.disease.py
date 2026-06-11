@@ -541,8 +541,8 @@ if __name__ == '__main__':
     # ---------------------------------------------------------
     print('--------CRC')
     crc_dir = '/bgi-seq-model-2/codes/zhangkexin/meta_index/experiment/results/network/1.8/'
-    crc_profile = pd.read_csv(crc_dir + 'crc.all.profile.clean.csv', index_col=0)
-    crc_sample_list = list(crc_profile.index)
+    with open(crc_dir + 'crc.pretrain.emb.samples.list.txt', 'r') as f:
+        crc_sample_list = [line.strip() for line in f.readlines()]
 
     crc_label_df = pd.read_csv(label_df_path, sep='\t', index_col=0)
     crc_label_df = crc_label_df[crc_label_df['project'] != 'HanniganGD_2017']

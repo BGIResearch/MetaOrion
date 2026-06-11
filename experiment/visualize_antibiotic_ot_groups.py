@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import List, Tuple
 from matplotlib.lines import Line2D
 from adjustText import adjust_text
+from scipy.stats import mannwhitneyu
+from statannotations.Annotator import Annotator
 
 import matplotlib
 
@@ -342,7 +344,117 @@ def save_group_mdi(df: pd.DataFrame, output_dir: Path) -> None:
     plt.show()
     plt.close()
 
-
+def save_group_mdi_boxplot(df: pd.DataFrame, output_dir: Path) -> None:
+    target_groups = ['high_BA__low_CA', 'high_BA__high_CA']
+    target_stages = ['A', 'B', 'C']
+    palette_group = {
+        'high_BA__low_CA': '#3BA997',
+        'high_BA__high_CA': '#B291B5'
+    }
+    palette_canon = {
+        'A': '#8da0cb',
+        'B': '#fc8d62',
+        'C': '#66c2a5'
+    }
+    df_ot = df
+    df_mdi = pd.read_csv(
+        '/bgi-seq-model-2/codes/zhangkexin/meta_index/experiment/results/network/1.8/Antibiotic.intervention.longi.complete/shared.biomarker.mdi.csv')
+    df_merged = pd.merge(df_mdi, df_ot[['individual_id', 'group']],
+                         left_on='subject', right_on='individual_id', how='inner')
+    df_filtered = df_merged[df_merged['group'].isin(target_groups)].copy()
+    df_filtered["canon"] = df_filtered["canon"].apply(lambda x: ''.join([c for c in str(x) if c.isalpha()]))
+    df_filtered = df_filtered[df_filtered['canon'].isin(target_stages)]
+    df_filtered['group'] = df_filtered['group'].astype(str)
+    df_filtered['canon'] = pd.Categorical(df_filtered['canon'], categories=target_stages, ordered=True)
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    sns.boxplot(
+        ax=axes[0],
+        data=df_filtered,
+        x='canon',
+        y='MNDI',
+        hue='group',
+        palette=palette_group,
+        width=0.6,
+        fliersize=4,
+        linewidth=1.5,
+        showfliers=False
+    )
+    box_pairs_1 = [
+        (("A", "high_BA__low_CA"), ("A", "high_BA__high_CA")),
+        (("B", "high_BA__low_CA"), ("B", "high_BA__high_CA")),
+        (("C", "high_BA__low_CA"), ("C", "high_BA__high_CA"))
+    ]
+    custom_labels_1 = []
+    for (stage1, group1), (stage2, group2) in box_pairs_1:
+        data1 = df_filtered[(df_filtered['canon'] == stage1) & (df_filtered['group'] == group1)]['MNDI']
+        data2 = df_filtered[(df_filtered['canon'] == stage2) & (df_filtered['group'] == group2)]['MNDI']
+        if not data1.empty and not data2.empty:
+            stat, p_val = mannwhitneyu(data1, data2, alternative='two-sided')
+            custom_labels_1.append(f"P = {p_val:.2e}")
+        else:
+            custom_labels_1.append("P = N/A")
+    annotator1 = Annotator(axes[0], box_pairs_1, data=df_filtered, x='canon', y='MNDI', hue='group')
+    annotator1.configure(loc='inside')
+    annotator1.set_custom_annotations(custom_labels_1)
+    annotator1.annotate()
+    for text in axes[0].texts:
+        text.set_fontsize(15)
+    axes[0].set_xlabel('Canon Stages (Time)')
+    axes[0].set_ylabel('MDI')
+    axes[0].legend(
+        loc='upper center',
+        bbox_to_anchor=(0.5, -0.15),
+        ncol=2,
+        frameon=False,
+        columnspacing=0.8
+    )
+    sns.boxplot(
+        ax=axes[1],
+        data=df_filtered,
+        x='group',
+        y='MNDI',
+        hue='canon',
+        palette=palette_canon,
+        width=0.6,
+        fliersize=4,
+        linewidth=1.5,
+        showfliers=False
+    )
+    box_pairs_2 = []
+    for grp in target_groups:
+        box_pairs_2.extend([
+            ((grp, "A"), (grp, "B")),
+            ((grp, "B"), (grp, "C")),
+            ((grp, "A"), (grp, "C"))
+        ])
+    custom_labels_2 = []
+    for (grp1, stage1), (grp2, stage2) in box_pairs_2:
+        data1 = df_filtered[(df_filtered['group'] == grp1) & (df_filtered['canon'] == stage1)]['MNDI']
+        data2 = df_filtered[(df_filtered['group'] == grp2) & (df_filtered['canon'] == stage2)]['MNDI']
+        if not data1.empty and not data2.empty:
+            stat, p_val = mannwhitneyu(data1, data2, alternative='two-sided')
+            custom_labels_2.append(f"P = {p_val:.2e}")
+        else:
+            custom_labels_2.append("P = N/A")
+    annotator2 = Annotator(axes[1], box_pairs_2, data=df_filtered, x='group', y='MNDI', hue='canon')
+    annotator2.configure(loc='inside')
+    annotator2.set_custom_annotations(custom_labels_2)
+    annotator2.annotate()
+    for text in axes[1].texts:
+        text.set_fontsize(15)
+    axes[1].set_xlabel('Group')
+    axes[1].set_ylabel('MDI')
+    axes[1].legend(
+        loc='upper center',
+        bbox_to_anchor=(0.5, -0.15),
+        ncol=3,
+        frameon=False,
+        columnspacing=0.8
+    )
+    plt.tight_layout()
+    plt.savefig(output_dir / 'ot_group_mdi_boxplot_subplots_pval.pdf', dpi=800, bbox_inches='tight')
+    plt.show()
+    plt.close()
 
 def save_volcano_plot(output_dir: Path) -> None:
     data_csv_path = '/bgi-seq-model-2/codes/zhangkexin/meta_index/experiment/results/network/1.8/Antibiotic.intervention.longi.complete/OT/C.last.cutoff70/ot_driver_taxa/source_driver_taxa_persistent_shift.csv'
@@ -462,12 +574,13 @@ def main() -> int:
     df, output_dir = load_results(args)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    save_scatter(df, output_dir)
+    # save_scatter(df, output_dir)
     # save_boxplots(df, output_dir)
     # save_group_summary(df, output_dir)
     # save_stat_tests(df, output_dir)
-    save_group_mdi(df, output_dir)
-    save_volcano_plot(output_dir)
+    # save_group_mdi(df, output_dir)
+    save_group_mdi_boxplot(df, output_dir)
+    # save_volcano_plot(output_dir)
 
     print(f"Loaded individuals: {len(df)}")
     print(f"Figures and tables written to: {output_dir}")

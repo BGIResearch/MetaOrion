@@ -188,8 +188,8 @@ if __name__ == '__main__':
     # ---------------------------------------------------------
     # 1. Execute CRC Analysis
     # ---------------------------------------------------------
-    crc_profile = pd.read_csv(NETWORK_DIR + 'crc.all.profile.clean.csv', index_col=0)
-    crc_samples = list(crc_profile.index)
+    with open(NETWORK_DIR + '/crc.pretrain.emb.samples.list.txt', 'r') as f:
+        crc_samples = [line.strip() for line in f.readlines()]
 
     analyze_and_plot_disease(
         disease_name='CRC',

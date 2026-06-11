@@ -221,53 +221,7 @@ def plot_matrix_correlation(matrix_file1, matrix_file2, p_file1=None, p_file2=No
 
 # 使用示例
 dir = '/bgi-seq-model-2/codes/zhangkexin/meta_index/experiment/results/network/1.8/'
-# df_common = plot_matrix_correlation(dir+'crc.test.pooling.spearman.prev.bootstrap.ci.edge.csv', dir+'crc.test.pooling.cosine.prev.bootstrap.ci.edge.csv',
-#                                     # dir+'crc.test.split1.profile.clean.prev.p.change.new.csv',
-#                                     label1="Emb Spearman", label2="Emb Cosine")
-# df_common = plot_matrix_correlation(dir+'crc.test.split1.profile.clean.prev.spearman.0.001.csv', dir+'crc.test.pooling.cosine.prev.bootstrap.ci.edge.csv',
-#                                     # dir+'crc.test.split1.profile.clean.prev.p.change.new.csv',
-#                                     label1="Profile spearman (p <0.001)", label2="Emb Cosine.1")
-# df_common = plot_matrix_correlation(dir+'fastspar.correlation.csv', dir+'crc.test.pooling.cosine.prev.bootstrap.ci.edge.csv',
-#                                     dir+'fastspar.pvalues.csv',
-#                                     "Profile Fastspar", "Emb Cosine",pvalue=0.05)
-# df_common = plot_matrix_correlation(dir+'crc.test.split1.profile.clean.prev.spearman.change.new.csv', dir+'crc.test.pooling.cosine.prev.bootstrap.ci.edge.csv',
-#                                     dir+'crc.test.split1.profile.clean.prev.p.change.new.csv',
-#                                     label1="Profile Filtered0.spearman", label2="Emb cosine.onlyp")
-# df_common = plot_matrix_correlation(dir+'crc.test.single.pooling.mean.cosine.nofilter.corr.csv', dir+'crc.test.pooling.cosine.prev.bootstrap.ci.edge.csv',
-#                                     # dir+'crc.test.split1.profile.clean.prev.p.change.new.csv',
-#                                     label1="Emb Cosine(nofiltered)", label2="Emb cosine")
-# df_common = plot_matrix_correlation(dir+'pretrain.crc.test.single.pooling.mean.cosine.prev01.corr.csv', dir+'crc.test.pooling.cosine.prev.bootstrap.ci.edge.csv',
-#                                     # dir+'crc.test.split1.profile.clean.prev.p.change.new.csv',
-#                                     label1="Emb Cosine(pretrain)", label2="Emb cosine (finetune)")
-# df_common = plot_matrix_correlation(dir+'crc.test.split1.profile.clean.prev.spearman.change.new.csv', dir+'pretrain.crc.test.single.pooling.mean.cosine.prev01.corr.csv',
-#                                     dir+'crc.test.split1.profile.clean.prev.p.change.new.csv',
-#                                     label1="Profile Filtered0.spearman", label2="Emb cosine (pretrain)")
-
-# df_common = plot_matrix_correlation(dir+'fastspar.correlation.1e6.tsv', dir+'crc.test.split1.profile.clean.prev.spearman.0.001.csv',
-#                                     dir+'fastspar.pvalues.1e6.tsv',
-#                                     label1="Relative Abundance Fastspar", label2="Relative Abundance Spearman", pvalue=0.05)
-
-# plot_matrix_correlation(dir+'crc.all.binabu.clean.spearman.csv', dir+'crc.all.predict.abu.spearman.csv',
-#                                     dir+'crc.all.binabu.clean.p.csv',dir+'crc.all.predict.abu.p.csv',
-#                                     label1="Binning Abu Spearman", label2="Predicted Abu Spearman")
 
 plot_matrix_correlation(dir+'crc.all.predict.abu.spearman.csv', dir+'crc.all.profile.clean.spearman.csv',
                                     dir+'crc.all.predict.abu.p.csv',dir+'crc.all.profile.clean.p.csv',
                                     label1="Predicted Abu Spearman", label2="Relative Abu Spearman")
-
-# plot_matrix_correlation(dir+'crc.pretrain.pooling.cosine.prev.bootstrap.ci.edge.cv.csv', dir+'crc.all.profile.clean.spearman.csv',
-#                                     p_file2=dir+'crc.all.profile.clean.p.csv',
-#                                     label1="Emb cosine", label2="Relative Abu Spearman")
-
-# plot_matrix_correlation('/bgi-seq-model-2/codes/zhangkexin/meta_index/experiment/results/network/12.18/crc.test.pretrain.pooling.cosine.prev.bootstrap.ci.edge.csv',
-#         dir+'crc.all.profile.clean.spearman.1873.csv',
-#                                     p_file2=dir+'crc.all.profile.clean.p.1873.csv',
-#                                     label1="Emb cosine+bootstrap", label2="Relative Abu Spearman+bootstrap")
-
-
-# plot_matrix_correlation(dir + 'tmp/crc.fusion.pooling.cosine.prev.bootstrap.ci.edge.cv.csv',
-#                         dir + 'crc.all.profile.clean.spearman.bootstrap.csv',
-#                         p_file2=dir + 'crc.all.profile.clean.p.bootstrap.csv',
-#                         label1="Fusion Emb cosine+bootstrap", label2="Relative Abundance Spearman+bootstrap")
-
-

@@ -312,8 +312,8 @@ if __name__ == '__main__':
     # ---------------------------------------------------------
     print(">>> Running Experiment: CRC")
     crc_dir = '/bgi-seq-model-2/codes/zhangkexin/meta_index/experiment/results/network/1.8/'
-    crc_profile = pd.read_csv(crc_dir + 'crc.all.profile.clean.csv', index_col=0)
-    crc_sample_list = list(crc_profile.index)
+    with open(crc_dir + 'crc.pretrain.emb.samples.list.txt', 'r') as f:
+        crc_sample_list = [line.strip() for line in f.readlines()]
 
     crc_case_samples = [i for i in crc_sample_list if label_df.loc[i, 'disease_united'] == 'CRC']
     crc_ctrl_samples = [i for i in crc_sample_list if label_df.loc[i, 'disease_united'] == 'healthy']

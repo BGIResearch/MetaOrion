@@ -3,24 +3,17 @@ import seaborn as sns
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import torch
-from torch import nn
-import torch.nn.functional as F
 from sklearn.metrics import roc_curve, roc_auc_score, confusion_matrix, matthews_corrcoef, classification_report
-from scipy.stats import norm
-from sklearn.manifold import TSNE
-from collections import Counter
-import umap
-import matplotlib.colors as mcolors
 
 
 def plot_multi_metrics(preds, labels, model_name, dir, classes=None, class_names=None):
     # sns.set()
-    f, ax = plt.subplots(figsize=(6, 6))
-    plt.rc('font', size=16)
     plt.style.use('default')
+    plt.rc('font', size=16)
     plt.rcParams['font.family'] = 'Arial'
     plt.rcParams['pdf.fonttype'] = 42
+
+    f, ax = plt.subplots(figsize=(6, 6))
 
     if classes is None:
         classes = sorted(np.unique(np.concatenate([labels, preds])))
@@ -69,16 +62,20 @@ def plot_multi_metrics(preds, labels, model_name, dir, classes=None, class_names
     ax.set_yticklabels(class_names, fontsize=16, rotation=0)
     ax.tick_params(axis='both', which='both', direction='in', length=0, width=0)
     # plt.savefig(dir + f"{model_name}.png", dpi=800, bbox_inches='tight')  # 降低dpi加速保存
-    # plt.savefig(dir + f"{model_name}.pdf", bbox_inches='tight', format='pdf')
+    plt.savefig(dir + f"{model_name}.pdf", bbox_inches='tight', format='pdf')
     plt.show()
 
-
+# filtered T2D 117
+df = pd.read_csv('/bgi-seq-model-2/datasets/zhangkexin/meta_index/metaphlan4/fine-tune/curated_LiS_CRC_20204_v0908.train_test.phe',sep='\t', index_col=0)
+filtered_samples = df[((df['From']=='LiS') & (df['project']=='QinJ_2012'))].index.tolist()
 pan_prob_list = []
 for i in range(1, 6):
     pan_pred = pd.read_csv(
         f'/bgi-seq-model-2/codes/zhangkexin/meta_index/output/llama/v4/PanDisease/Split5.specific.aug.Full.sortabu.ema.12.4/split{str(i)}/best_ckpt/result/probs/metaGPT.multidisease.test.prob.csv')
     pan_prob_list.append(pan_pred)
 pan_pred = pd.concat(pan_prob_list, axis=0)  # axis=0表示纵向堆叠
+pan_pred = pan_pred[~pan_pred['Unnamed: 0'].isin(filtered_samples)]
+
 PAN_LABELS = {
     'Healthy': 0,
     'IBD': 1,
@@ -97,7 +94,7 @@ PAN_LABELS = {
     'Adenoma': 14,
     'Melanoma': 15
 }
-plot_multi_metrics(pan_pred['pred'], pan_pred['label'], 'metaGPT.sortabu.multidisease.test.split5.confusion.matrix.3.24',
+plot_multi_metrics(pan_pred['pred'], pan_pred['label'], 'metaGPT.sortabu.multidisease.test.split5.confusion.matrix.5.11',
                    '/bgi-seq-model-2/codes/zhangkexin/meta_index/experiment/figures/finetune/11.25/',
                    classes=np.arange(0, len(PAN_LABELS)),
                    class_names=list(PAN_LABELS.keys()))

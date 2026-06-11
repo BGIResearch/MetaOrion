@@ -1,4 +1,3 @@
-# 扰动和dropout增强数据
 import os
 import json
 
@@ -47,7 +46,6 @@ def process_file(pth, datapath_dir, s, disease):
             rng = np.random.RandomState(seed)
             n_species = len(abu)
 
-            # 生成丢弃掩码（1=保留，0=丢弃）
             mask = rng.binomial(1, 1 - drop_rate, size=n_species).astype(bool)
 
             aug_drop_abu = np.array(abu)[mask]  # 丰度向量（长度减小）
@@ -69,7 +67,7 @@ def process_file(pth, datapath_dir, s, disease):
                     f.write(save_pth + '\n')
 
 
-datapath_dir = '/home/share/huadjyin/home/zhangkexin2/data/meta_index/preprocess/metaphlan4/fine-tune/nov.specific.random.5/'
+datapath_dir = '/bgi-seq-model-2/datasets/zhangkexin/meta_index/preprocess/metaphlan4/fine-tune/nov.specific.random.5/'
 for s in os.listdir(datapath_dir):
     for disease in ['ibd']:
         datafiles = open(os.path.join(datapath_dir, s, 'datapath.'+disease+'.train'), 'r').readlines()

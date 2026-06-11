@@ -264,11 +264,11 @@ if __name__ == '__main__':
     # ==========================================
     # Global Paths and Configuration
     # ==========================================
-    PROFILE_PATH = '/home/share/huadjyin/home/chenjunhong/META_AI/dataset/meta_index/data_v1121/curated_LiS_CRC_20204_v1121.train_test.profile'
-    METADATA_PATH = '/home/share/huadjyin/home/chenjunhong/META_AI/dataset/meta_index/data_v0905/curated_LiS_CRC_20204_v0908.train_test.phe'
+    PROFILE_PATH = '/bgi-seq-model-2/datasets/zhangkexin/meta_index/metaphlan4/fine-tune/curated_LiS_CRC_20204_v1121.train_test.profile'
+    METADATA_PATH = '/bgi-seq-model-2/datasets/zhangkexin/meta_index/metaphlan4/fine-tune/curated_LiS_CRC_20204_v0908.train_test.phe'
 
-    DATASET_DIR = '/home/share/huadjyin/home/zhangkexin2/data/meta_index/preprocess/metaphlan4/fine-tune/nov.specific.random.5/'
-    SAVE_PATH = '/home/share/huadjyin/home/zhangkexin2/code/meta_index/experiment/results/ML-model/nov.specific.random.5/'
+    DATASET_DIR = '/bgi-seq-model-2/datasets/zhangkexin/meta_index/preprocess/metaphlan4/fine-tune/nov.specific.random.5/'
+    SAVE_PATH = '/bgi-seq-model-2/codes/zhangkexin/meta_index/experiment/results/ML-model/nov.specific.random.5/'
 
     DISEASE = 'pandisease'
     PAN_LABELS_SPECIFIC = {
