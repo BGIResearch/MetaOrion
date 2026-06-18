@@ -35,7 +35,8 @@ MetaOrion/
 │       ├── models/          # Pretraining and fine-tuning model architectures
 │       └── train/           # Training logic for phenotype prediction
 ├── requirements.txt         # Python dependencies
-└── train.bash.txt           # Example training commands
+└── run.train.sh             # Example training commands
+└── run.inference.sh         # Example inference commands
 ```
 
 ## Installation
@@ -118,11 +119,11 @@ accelerate launch \
 The expected split files follow this layout:
 
 ```text
-split1.change/datapath.pandisease.train.all
-split1.change/datapath.pandisease.val
+split1/datapath.pandisease.train.all
+split1/datapath.pandisease.val
 ...
-split5.change/datapath.pandisease.train.all
-split5.change/datapath.pandisease.val
+split5/datapath.pandisease.train.all
+split5/datapath.pandisease.val
 ```
 
 ## Phenotype Model Evaluation
@@ -146,9 +147,9 @@ accelerate launch \
 The expected test files follow this layout:
 
 ```text
-split1.change/datapath.13_Ning_2023.test
+split1/datapath.13_Ning_2023.test
 ...
-split5.change/datapath.13_Ning_2023.test
+split5/datapath.13_Ning_2023.test
 ```
 
 ## Additional Scripts
