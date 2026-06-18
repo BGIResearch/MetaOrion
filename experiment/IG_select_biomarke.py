@@ -287,7 +287,7 @@ if __name__ == '__main__':
     # Define paths
     WEIGHT_BASE_PATH = '/bgi-seq-model-2/codes/zhangkexin/meta_index/output/llama/v4/PanDisease/Split5.specific.aug.Full.sortabu.ema.12.4/'
     METADATA_BASE_PATH = '/bgi-seq-model-2/datasets/zhangkexin/meta_index/preprocess/metaphlan4/fine-tune/nov.specific.random.5'
-    OUT_TXT_PATH = '/bgi-seq-model-2/codes/zhangkexin/meta_index/experiment/results/features/11.25/sort.train.multidisease.mean/pandisease.biomarker.txt'
+    OUT_TXT_PATH = '/bgi-seq-model-2/codes/zhangkexin/meta_index/experiment/results/features/11.25/sort.multidisease.mean/pandisease.biomarker.txt'
     OUT_PDF_PATH = '/bgi-seq-model-2/codes/zhangkexin/meta_index/experiment/figures/finetune/11.25/features/4.disease.biomarker.top30.pdf'
 
     # 1. Extract PanDisease biomarkers

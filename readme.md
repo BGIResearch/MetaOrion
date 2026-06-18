@@ -1,94 +1,164 @@
 # MetaOrion
 
-MetaOrion is a species-level, abundance-aware representation learning framework designed for personalized metagenomics. Built on a customized causal transformer architecture, it is pretrained on a harmonized collection of over 100,000 human metagenomes to capture transferable ecological priors, and subsequently fine-tuned for disease prediction. Beyond classification, MetaOrion identifies critical condition-specific biomarkers and leverages its learned embeddings to reconstruct individualized microbial interaction networks directly from single-sample taxonomic profiles. Based on these networks, the framework derives a Microbial Dysbiosis Index (MDI) to precisely quantify structural ecological shifts. Ultimately, MetaOrion provides a unified framework for understanding microbiome organization across health and disease.
+MetaOrion is a species-level, abundance-aware representation learning framework designed for personalized metagenomics. Built on a customized causal transformer architecture, it is pretrained on a harmonized collection of over 100,000 human metagenomes to capture transferable ecological priors, and subsequently fine-tuned for disease prediction.
 
+Beyond classification, MetaOrion identifies critical condition-specific biomarkers and leverages its learned embeddings to reconstruct individualized microbial interaction networks directly from single-sample taxonomic profiles. Based on these networks, the framework derives a Microbial Dysbiosis Index (MDI) to quantify structural ecological shifts. MetaOrion provides a unified framework for understanding microbiome organization across health and disease.
 
+![MetaOrion framework](figs/framework.png)
 
-## 📁 Repository Structure
+## Overview
 
-Based on the project structure, the main directories are organized as follows:
+MetaOrion supports the following analysis tasks:
 
-Plaintext
+- Species-level metagenomic representation learning from taxonomic abundance profiles.
+- Phenotype and disease prediction through downstream fine-tuning.
+- Condition-specific biomarker attribution.
+- Individualized microbial interaction network reconstruction.
+- Microbial Dysbiosis Index calculation for quantifying ecological perturbation.
 
-```
+## Repository Structure
+
+The main tracked directories are organized as follows. Local outputs, checkpoints, temporary files, IDE settings, and other ignored artifacts are intentionally omitted.
+
+```text
 MetaOrion/
-├── configs/                  # Configuration files
-├── demo_data/                # Example datasets (e.g., profiles, metadata)
-│   └── datapaths/            # Processed JSON samples and datapath index files
-├── results/                  # Output directory for evaluation results and logs
-├── scripts/                  # Execution scripts (preprocessing, evaluation, etc.)
-├── src/                      # Source code
-│   └── metagenome_model/     # Core model implementations
-│       ├── basic/            # Basic modules and utilities
-│       ├── config/           # Model configuration classes
-│       ├── inference/        # Inference components
-│       └── models/           # Pre-train and fine-tune model architectures
-└── weights/                  # Pre-trained and fine-tuned model checkpoints
+├── configs/                 # Runtime configuration files
+├── demo_data/               # Example taxonomic profiles, metadata, and datapath files
+├── experiment/              # Downstream analysis and visualization scripts
+├── figs/                    # Figures used in the documentation
+├── scripts/                 # Entry scripts for preprocessing, training, evaluation, and attribution
+├── src/
+│   └── metaorion/
+│       ├── basic/           # Tokenizer, datasets, kernels, and utilities
+│       ├── config/          # Model configuration classes
+│       ├── inference/       # Phenotype inference, sequence inference, and attribution modules
+│       ├── models/          # Pretraining and fine-tuning model architectures
+│       └── train/           # Training logic for phenotype prediction
+├── requirements.txt         # Python dependencies
+└── train.bash.txt           # Example training commands
 ```
 
-## 🛠️ Environment Setup
+## Installation
 
-Before running the code, please ensure you have the required dependencies installed. You can install them via the provided `requirements.txt` file.
+Create a clean Python environment and install the required dependencies:
 
-Bash
-
-```
-# Install dependencies
-# pip
+```bash
 pip install -r requirements.txt
-# conda
+```
+
+Alternatively, dependencies can be installed with conda:
+
+```bash
 conda install --yes --file requirements.txt
 ```
 
-## 🚀 Usage Guide
+## Demo Data
 
-The pipeline generally consists of two main steps: data preprocessing and model evaluation.
+The example data are provided under `demo_data/`.
 
-### Step 1: Data Preprocessing
+- `13_Ning_2023.profile`: a species-level abundance profile table, where rows are taxa and columns are samples.
+- `13_Ning_2023.info`: sample metadata. The preprocessing script reads the `Group` column and maps disease names to unified labels.
+- `datapaths/`: example preprocessed JSON samples and datapath index files.
 
-First, convert the raw tabular profile and metadata into individual JSON samples for optimized data loading. Run the following command (assuming you are executing this from the `scripts` or root directory):
+After preprocessing, each sample is stored as an individual JSON file:
 
-Bash
-
+```json
+{
+  "sampleid": "sample_id",
+  "taxa": ["s__example_species"],
+  "abundance": [0.001],
+  "disease_united": "healthy"
+}
 ```
-python data_preprocess.py \
-    --cohort "13_Ning_2023" \
-    --profile "../demo_data/13_Ning_2023.profile" \
-    --metadata "../demo_data/13_Ning_2023.info" \
-    --out_dir "../demo_data/datapaths/"
+
+The `disease_united` field is generated when metadata are provided and sample labels can be matched.
+
+## Data Preprocessing
+
+Run the preprocessing script from the project root:
+
+```bash
+python scripts/data_preprocess.py \
+  --cohort 13_Ning_2023 \
+  --profile demo_data/13_Ning_2023.profile \
+  --metadata demo_data/13_Ning_2023.info \
+  --out_dir demo_data/datapaths
 ```
 
-This script will filter the taxa sequences and abundances, generating independent `.json` files for each sample and saving them into the specified `--out_dir`.
+Main arguments:
 
-### Step 2: Model Evaluation & Inference
+- `--cohort`: cohort or dataset name.
+- `--profile`: path to the taxonomic abundance profile.
+- `--metadata`: path to the metadata file. This argument is optional.
+- `--out_dir`: output directory for JSON samples and datapath files.
+- `--min_abundance`: minimum abundance threshold. The default value is `1e-4`.
+- `--min_len`: minimum number of retained species per sample. The default value is `7`.
 
-Once the data is preprocessed, use `accelerate` to launch the evaluation script. This handles model inference and calculates metrics for disease phenotype prediction.
+## Phenotype Model Fine-Tuning
 
-Bash
+The phenotype fine-tuning entry point is `scripts/finetune_phenotype_model.py`. It iterates over five data splits and calls `MetaOrionPhenotypeTrainer`.
 
-```
+```bash
 accelerate launch \
-    --num_processes=1 \
-    --num_machines=1 \
-    --machine_rank=0 \
-    --main_process_port 35612 \
-    ./MetaOrion/scripts/evaluation_phenotype_model.py \
-    --data_dir ./MetaOrion/demo_data/datapaths/ \
-    --cohort 13_Ning_2023 \
-    --model_name_or_path ./MetaOrion/weights/ \
-    --batch_size 48 \
-    --mixed_precision fp16 \
-    --accumulation_step 2 \
-    --output_home ./MetaOrion/results/ \
-    --seed 42 
+  --config_file configs/accelerate_config.yaml \
+  scripts/finetune_phenotype_model.py \
+  --data_dir /path/to/split_datapaths \
+  --model_name_or_path /path/to/pretrained_checkpoint \
+  --batch_size 48 \
+  --max_epochs 100 \
+  --learning_rate 1e-4 \
+  --weight_decay 1e-3 \
+  --decay_gamma 0.9 \
+  --decay_step 10 \
+  --mixed_precision fp16 \
+  --accumulation_step 2 \
+  --output_home /path/to/output
 ```
 
-## 📊 Results
+The expected split files follow this layout:
 
-After the evaluation script completes successfully, all output files, including prediction logs, evaluation metrics, and figures, will be automatically saved in the `results/` directory.
+```text
+split1.change/datapath.pandisease.train.all
+split1.change/datapath.pandisease.val
+...
+split5.change/datapath.pandisease.train.all
+split5.change/datapath.pandisease.val
+```
 
-<img src="D:\zhangkexin_work\code\MetaOrion\results\split1\figs\pandisease.umap.png" alt="pandisease.confusion.matrix" style="zoom:9%;" />
+## Phenotype Model Evaluation
 
+The phenotype evaluation entry point is `scripts/evaluation_phenotype_model.py`. It loads the checkpoint for each split and evaluates disease prediction performance on the corresponding test datapath.
 
+```bash
+accelerate launch \
+  --config_file configs/accelerate_config.yaml \
+  scripts/evaluation_phenotype_model.py \
+  --data_dir /path/to/split_datapaths \
+  --cohort 13_Ning_2023 \
+  --model_name_or_path /path/to/model_checkpoints \
+  --batch_size 48 \
+  --mixed_precision fp16 \
+  --accumulation_step 2 \
+  --output_home /path/to/output \
+  --seed 42
+```
 
-<img src="D:\zhangkexin_work\code\MetaOrion\results\split1\figs\pandisease.confusion.matrix.png" alt="pandisease.confusion.matrix" style="zoom:4%;" />
+The expected test files follow this layout:
+
+```text
+split1.change/datapath.13_Ning_2023.test
+...
+split5.change/datapath.13_Ning_2023.test
+```
+
+## Additional Scripts
+
+- `scripts/attribute_phenotype_model.py`: feature attribution for phenotype models.
+- `scripts/evaluation_sequence_model.py`: sequence model evaluation.
+- `experiment/`: scripts for MDI analysis, network analysis, visualization, and downstream comparisons.
+
+## Notes
+
+- Large model checkpoints and local experiment outputs should be kept outside the tracked source tree or in ignored local directories.
+- Before running fine-tuning or evaluation, make sure `--model_name_or_path` points to a valid model checkpoint directory.
+- Paths in the command examples are templates and should be replaced with paths in your local environment.

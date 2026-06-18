@@ -37,7 +37,7 @@ if __name__ == '__main__':
     output_home = vars(args)['output_home']
 
     disease = 'pandisease'
-    for s in ['split' + str(i)+'.change' for i in range(1, 6)]:
+    for s in ['split' + str(i) for i in range(1, 6)]:
         args_dict['split'] = s
         args_dict['train_data_path'] = os.path.join(vars(args)['data_dir'], s, f'datapath.{disease}.train.all')
         args_dict['val_data_path'] = os.path.join(vars(args)['data_dir'], s, f'datapath.{disease}.val')

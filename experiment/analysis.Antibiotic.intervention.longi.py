@@ -301,14 +301,14 @@ if __name__ == "__main__":
     # =========================================================
     # Experiment 2: Subject-specific Shannon and MDI trajectories (Figure 2)
     # =========================================================
-    selected_subjects = ['CAK', 'DAL', 'CAM', 'EBR', 'BAG', 'EAC']
+    selected_subjects = ['CAK', 'CAA', 'CAM', 'CAC', 'CAN', 'EBR', 'BAG', 'EAC']
 
     df_ind = plot_df[plot_df['subject'].isin(selected_subjects)].dropna(subset=['canon']).copy()
     set_canon_order(df_ind)
     df_ind = df_ind.sort_values(['subject', 'canon'])
     df_ind['Group'] = df_ind['abx'].map({'Y': 'Case Subject', 'N': 'Control Subject'})
 
-    subject_colors = ['#8AB1D2', '#F5AA61', '#9DD0C7', '#E58579', '#D9BDDB', '#F1DFA4']
+    subject_colors = ['#8AB1D2', '#F5AA61', '#9DD0C7', '#D0D0D0', '#C7988C', '#E58579', '#D9BDDB', '#F1DFA4']
     custom_palette_ind = dict(zip(selected_subjects, subject_colors))
     group_markers = {'Case Subject': 'o', 'Control Subject': '^'}
     group_dashes = {'Case Subject': '', 'Control Subject': (4, 2)}
@@ -366,7 +366,7 @@ if __name__ == "__main__":
         sample_idx = sample_list.index(sample_id)
         canon_label = df_ind.loc[df_ind['sample_id'] == sample_id, 'canon'].values[0]
 
-        if canon_label in ['A1', 'B1', 'B3', 'B5', 'C1', 'C3', 'C5']:
+        if canon_label in ['A1', 'B1', 'B3', 'B5', 'C1', 'C3', 'C5', 'C6']:
             # Reconstruct correlation matrix
             taxa_keys = list(taxa2id.keys())
             corr_matrix = pd.DataFrame(individual_network[sample_idx, :, :], columns=taxa_keys, index=taxa_keys)

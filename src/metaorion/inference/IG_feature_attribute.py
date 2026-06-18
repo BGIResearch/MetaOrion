@@ -28,7 +28,7 @@ class MetaOrionPhenotypeAttribute(Kernel):
             dropout_rate=self.dropout_rate,
             is_inference=True
         )
-        self.tax_weight_path = self.register_dir(os.path.join(self.output_home, 'tax_weight'))
+        self.tax_weight_path = self.register_dir(os.path.join(self.output_home, 'tax_weight_tmp'))
 
         if self.accelerator.is_main_process:
             self.accelerator.print(self.model)

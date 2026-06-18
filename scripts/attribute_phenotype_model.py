@@ -20,7 +20,7 @@ def register_params():
         help="mixed precision type. option: ['fp16', 'fp8', 'bf16', 'no']")
     parser.add_argument(
         '--accumulation_step', type=int, default=1, help='gradient accumulation steps')
-    parser.add_argument('--batch_size', type=int, help='batch size')
+    parser.add_argument('--batch_size', type=int, default=1, help='batch size')
     parser.add_argument('--output_home', type=str, help='output home')
     parser.add_argument('--dropout_rate', type=float, default=0.2, help='dropout rate')
     parser.add_argument('--attribution_steps', type=int, default=100, help='integrated gradients steps')
@@ -39,7 +39,7 @@ def worker():
     for s in ['split' + str(i) for i in range(1, 6)]:
         print(s)
 
-        args_dict['val_data_path'] = os.path.join(args_dict['data_dir'], f'{s}.change/datapath.{cohort}.test')
+        args_dict['val_data_path'] = os.path.join(args_dict['data_dir'], f'{s}/datapath.{cohort}.test')
         args_dict['model_name_or_path'] = os.path.join(model_name_or_path, s, 'best_ckpt/')
         args_dict['output_home'] = os.path.join(output_home, s, 'best_ckpt/result/')
 

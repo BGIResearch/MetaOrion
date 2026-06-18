@@ -40,7 +40,7 @@ def worker():
     for s in ['split' + str(i) for i in range(1, 6)]:
         print(s)
 
-        args_dict['val_data_path'] = os.path.join(args_dict['data_dir'], f'{s}.change/datapath.{cohort}.test')
+        args_dict['val_data_path'] = os.path.join(args_dict['data_dir'], f'{s}/datapath.{cohort}.test')
         args_dict['model_name_or_path'] = os.path.join(model_name_or_path, s, 'best_ckpt/')
         args_dict['output_home'] = os.path.join(output_home, s, 'best_ckpt/result/')
 

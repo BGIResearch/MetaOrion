@@ -1,11 +1,10 @@
 
 source /root/miniconda3/etc/profile.d/conda.sh
 
-conda activate /bgi-seq-model-2/codes/wangshengfu/00_envs/metagenome
+conda activate MetaOrionEnv
 
 
 
-#export COMET_API_KEY="Jg07yXkfdREMDeK1GEXiQCPJY"
 CUDA_VISIBLE_DEVICES=0
 
 accelerate launch \
